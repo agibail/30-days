@@ -32,6 +32,8 @@ find_git() {
 GIT="$(find_git || true)"
 # git spawns `git` from PATH for background work; make sure that's the same (real) git
 [ -n "$GIT" ] && [ "$GIT" != git ] && PATH="$(dirname "$GIT"):$PATH"
+# GitHub Desktop's relocated git can't find its own helpers (e.g. https) without this
+case "$GIT" in */GitHub\ Desktop.app/*) export GIT_EXEC_PATH="${GIT%/bin/git}/libexec/git-core" ;; esac
 g() { [ -n "$GIT" ] || die "git not found (install GitHub Desktop or Xcode command line tools)"; "$GIT" "$@"; }
 
 json_str() { # stdin -> JSON string literal
