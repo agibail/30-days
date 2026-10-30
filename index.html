@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>30 Days</title>
+  <meta name="description" content="A new project every day for 30 days.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>30</text></svg>">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="top">
+    <a href="#/" class="brand">30 Days</a>
+    <div class="progress" id="progress"></div>
+  </header>
+  <main id="app"></main>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lb-close" aria-label="Close">×</button>
+    <button class="lb-prev" aria-label="Previous">‹</button>
+    <div class="lb-stage"></div>
+    <button class="lb-next" aria-label="Next">›</button>
+    <div class="lb-count"></div>
+  </div>
+
+  <script src="data/manifest.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

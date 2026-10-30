@@ -1,0 +1,324 @@
+#!/bin/bash
+# 30 — helper CLI for the 30 Days project. Run `./30 help`.
+# Plain bash 3.2 + macOS built-ins only (no node/python needed).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+DAYS_DIR="$ROOT/days"
+cd "$ROOT"
+
+[ -f config/site.env ] && . config/site.env
+START_DATE="${START_DATE:-$(date +%Y-%m-%d)}"
+TOTAL_DAYS="${TOTAL_DAYS:-30}"
+MEDIA_BACKEND="${MEDIA_BACKEND:-local}"
+BRANCH="${BRANCH:-main}"
+MAX_LOCAL_MB="${MAX_LOCAL_MB:-90}"
+
+die()  { echo "error: $*" >&2; exit 1; }
+info() { echo "→ $*"; }
+
+# ---------- helpers ----------
+
+find_git() {
+  local c
+  c="$(command -v git 2>/dev/null || true)"
+  if [ -n "$c" ] && [ "$c" != "/usr/bin/git" ]; then echo "$c"; return; fi
+  # /usr/bin/git is only a stub unless the Xcode command line tools are installed
+  if [ "$c" = "/usr/bin/git" ] && xcode-select -p >/dev/null 2>&1; then echo "$c"; return; fi
+  c="/Applications/GitHub Desktop.app/Contents/Resources/app/git/bin/git"
+  [ -x "$c" ] && { echo "$c"; return; }
+  return 1
+}
+GIT="$(find_git || true)"
+# git spawns `git` from PATH for background work; make sure that's the same (real) git
+[ -n "$GIT" ] && [ "$GIT" != git ] && PATH="$(dirname "$GIT"):$PATH"
+g() { [ -n "$GIT" ] || die "git not found (install GitHub Desktop or Xcode command line tools)"; "$GIT" "$@"; }
+
+json_str() { # stdin -> JSON string literal
+  awk 'BEGIN{ORS=""; print "\""} { gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\t/,"\\t"); gsub(/\r/,""); if(NR>1) print "\\n"; print } END{print "\""}'
+}
+js() { printf '%s' "$1" | json_str; }
+
+noon_epoch() { date -j -f "%Y-%m-%d %H:%M:%S" "$1 12:00:00" +%s; }
+today_num() { echo $(( ( $(noon_epoch "$(date +%Y-%m-%d)") - $(noon_epoch "$START_DATE") + 43200 ) / 86400 + 1 )); }
+day_date() { date -j -v+"$(( $1 - 1 ))"d -f %Y-%m-%d "$START_DATE" +%Y-%m-%d; }
+
+resolve_day() {
+  local a="${1:-}" n
+  case "$a" in
+    today|"") n="$(today_num)" ;;
+    *[!0-9]*) die "not a day number: $a" ;;
+    *) n=$((10#$a)) ;;
+  esac
+  [ "$n" -ge 1 ] && [ "$n" -le 99 ] || die "day must be 1–99 (got $n)"
+  echo "$n"
+}
+is_day_arg() { case "${1:-}" in today) return 0 ;; ""|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
+slug() { printf 'day-%02d' "$1"; }
+day_dir() { echo "$DAYS_DIR/$(slug "$1")"; }
+require_day() { [ -f "$(day_dir "$1")/README.md" ] || die "day $1 doesn't exist yet — run: ./30 new $1 \"Title\""; }
+
+meta_get() { # file key -> value from the --- front matter
+  awk -v k="$2" 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{exit} f{i=index($0,":"); if(i&&substr($0,1,i-1)==k){v=substr($0,i+1); sub(/^[ \t]+/,"",v); sub(/[ \t]+$/,"",v); print v; exit}}' "$1"
+}
+meta_body() { # file -> everything after the front matter, leading blank lines trimmed
+  awk 'NR==1&&$0=="---"{f=1;next} f==1&&$0=="---"{f=2;next} f!=1{ if(!s&&$0~/^[ \t]*$/)next; s=1; print }' "$1"
+}
+
+lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+media_kind() { # path/url -> image|video|""
+  local e; e="$(lower "${1%%\?*}")"; e="${e##*.}"
+  case "$e" in
+    jpg|jpeg|png|gif|webp|avif|svg) echo image ;;
+    mp4|webm|mov|m4v) echo video ;;
+    *) echo "" ;;
+  esac
+}
+sed_esc() { printf '%s' "$1" | sed -e 's/[\/&|]/\\&/g'; }
+safe_name() { printf '%s' "$1" | tr ' ' '-' | tr -cd 'A-Za-z0-9._-'; }
+
+repo_url() {
+  local u; u="$(g remote get-url origin 2>/dev/null || true)"
+  [ -n "$u" ] || return 0
+  u="${u%.git}"
+  case "$u" in git@github.com:*) u="https://github.com/${u#git@github.com:}" ;; esac
+  case "$u" in https://*@github.com/*) u="https://github.com/${u#https://*@github.com/}" ;; esac
+  echo "$u"
+}
+
+latest_iteration() { # day dir -> path of highest vNN (or nothing)
+  local v last=""
+  for v in "$1"/v[0-9][0-9]; do [ -d "$v" ] && last="$v"; done
+  echo "$last"
+}
+
+# ---------- commands ----------
+
+cmd_new() {
+  local n title type d esc
+  n="$(resolve_day "${1:-}")"; title="${2:-Untitled}"; type="${3:-mixed}"
+  case "$type" in website|image|video|mixed|other) ;; *) die "type must be website|image|video|mixed|other" ;; esac
+  d="$(day_dir "$n")"
+  [ -f "$d/README.md" ] && die "day $n already exists ($d)"
+  mkdir -p "$d/media"
+  cat > "$d/README.md" <<EOF
+---
+title: $title
+date: $(day_date "$n")
+type: $type
+---
+
+What I'm making today, what I learned, what I'd change.
+EOF
+  touch "$d/media/.gitkeep"
+  if [ "$type" = website ] || [ "$type" = mixed ]; then cmd_site "$n"; fi
+  info "created $(slug "$n"): $title ($type)"
+}
+
+cmd_site() { # add a website starter to an existing day
+  local n d esc
+  n="$(resolve_day "${1:-}")"; require_day "$n"; d="$(day_dir "$n")"
+  [ -f "$d/site/index.html" ] && { info "$(slug "$n") already has a site/"; return 0; }
+  mkdir -p "$d/site"
+  esc="$(sed_esc "$(meta_get "$d/README.md" title)")"
+  sed -e "s|{{TITLE}}|$esc|g" -e "s|{{DAY}}|$n|g" templates/site/index.html > "$d/site/index.html"
+  info "added website starter: days/$(slug "$n")/site/index.html"
+}
+
+r2_upload() { # file key -> public url
+  [ -f config/r2.env ] || die "R2 isn't set up yet — copy config/r2.env.example to config/r2.env and fill it in"
+  . config/r2.env
+  local v; for v in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET R2_PUBLIC_URL; do
+    [ -n "${!v:-}" ] || die "$v is empty in config/r2.env"
+  done
+  curl -fsS --aws-sigv4 "aws:amz:auto:s3" \
+    --user "$R2_ACCESS_KEY_ID:$R2_SECRET_ACCESS_KEY" \
+    -H "x-amz-content-sha256: UNSIGNED-PAYLOAD" \
+    -H "Content-Type: $(file --mime-type -b "$1")" \
+    --upload-file "$1" \
+    "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com/$R2_BUCKET/$2" >/dev/null \
+    || die "R2 upload failed for $1"
+  echo "${R2_PUBLIC_URL%/}/$2"
+}
+
+cmd_add() { # add images/videos (files or folders) to a day
+  local n d backend="$MEDIA_BACKEND" files=() f src name base ext dest i mb kind url tmpdir added=0
+  n="$(resolve_day "${1:-}")"; shift || true; require_day "$n"; d="$(day_dir "$n")"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --r2) backend=r2 ;;
+      --local) backend=local ;;
+      *) if [ -d "$1" ]; then
+           while IFS= read -r f; do files+=("$f"); done < <(find "$1" -type f ! -name '.*' | sort)
+         elif [ -f "$1" ]; then files+=("$1")
+         else die "no such file or folder: $1"; fi ;;
+    esac; shift
+  done
+  [ ${#files[@]} -gt 0 ] || die "usage: ./30 add <day> [--r2|--local] <files or folders...>"
+  tmpdir="$(mktemp -d)"
+  for src in "${files[@]}"; do
+    name="$(safe_name "$(basename "$src")")"; ext="$(lower "${name##*.}")"
+    if [ "$ext" = heic ] || [ "$ext" = heif ]; then # browsers can't show HEIC; convert with macOS sips
+      name="${name%.*}.jpg"; ext=jpg; sips -s format jpeg "$src" --out "$tmpdir/$name" >/dev/null; src="$tmpdir/$name"
+    fi
+    kind="$(media_kind "$name")"
+    [ -n "$kind" ] || { echo "  skip (not an image/video): $src"; continue; }
+    if [ "$backend" = r2 ]; then
+      url="$(r2_upload "$src" "30-days/$(slug "$n")/$(date +%Y%m%d%H%M%S)-$name")"
+      echo "$url" >> "$d/media.txt"; echo "  uploaded → $url"
+    else
+      mb=$(( $(stat -f %z "$src") / 1048576 ))
+      [ "$mb" -lt "$MAX_LOCAL_MB" ] || die "$name is ${mb}MB — too big for GitHub. Use: ./30 add $n --r2 \"$src\""
+      base="${name%.*}"; dest="$d/media/$name"; i=2
+      while [ -e "$dest" ]; do dest="$d/media/$base-$i.$ext"; i=$((i+1)); done
+      cp "$src" "$dest"; echo "  added → ${dest#"$ROOT"/}"
+    fi
+    added=$((added+1))
+  done
+  rm -rf "$tmpdir"
+  info "$added file(s) added to $(slug "$n")"
+  cmd_build >/dev/null
+}
+
+cmd_snapshot() { # freeze the current site/ as the next iteration vNN
+  local n d last next note="${2:-}" num
+  n="$(resolve_day "${1:-}")"; require_day "$n"; d="$(day_dir "$n")"
+  [ -f "$d/site/index.html" ] || { info "$(slug "$n") has no site/ — nothing to snapshot"; return 0; }
+  last="$(latest_iteration "$d")"
+  if [ -n "$last" ] && diff -rq -x _iteration.txt "$d/site" "$last" >/dev/null 2>&1; then
+    info "site unchanged since $(basename "$last") — no new iteration"; return 0
+  fi
+  num=1; [ -n "$last" ] && num=$(( 10#$(basename "$last" | tr -d v) + 1 ))
+  next="$d/$(printf 'v%02d' "$num")"
+  cp -R "$d/site" "$next"
+  printf '%s\t%s\n' "$(date '+%Y-%m-%d %H:%M')" "$note" > "$next/_iteration.txt"
+  info "saved iteration $(basename "$next")"
+}
+
+changelog_add() { # day-or-empty message
+  local tag="" line
+  [ -n "$1" ] && tag=" · **Day $(printf %02d "$1")**"
+  line="- $(date '+%Y-%m-%d %H:%M')$tag · $2"
+  [ -f CHANGELOG.md ] || printf '# Changelog\n\n<!-- new entries go below this line -->\n' > CHANGELOG.md
+  awk -v l="$line" '{print} /^<!-- new entries go below this line -->$/{print l}' CHANGELOG.md > CHANGELOG.md.tmp
+  mv CHANGELOG.md.tmp CHANGELOG.md
+}
+
+cmd_build() { # regenerate data/manifest.js from the days/ folders
+  local out="data/manifest.js" tmp d n readme sep msep f kind first
+  mkdir -p data; tmp="$(mktemp)"
+  {
+    printf 'window.MANIFEST = {\n'
+    printf '  "generated": %s,\n' "$(js "$(date '+%Y-%m-%d %H:%M')")"
+    printf '  "start": %s,\n  "total": %s,\n' "$(js "$START_DATE")" "$TOTAL_DAYS"
+    printf '  "repo": %s,\n  "branch": %s,\n' "$(js "$(repo_url)")" "$(js "$BRANCH")"
+    printf '  "days": ['
+    sep=""
+    for d in "$DAYS_DIR"/day-[0-9][0-9]; do
+      readme="$d/README.md"; [ -f "$readme" ] || continue
+      n=$((10#${d##*day-}))
+      printf '%s\n    {"day": %s, "slug": %s, ' "$sep" "$n" "$(js "$(basename "$d")")"; sep=","
+      printf '"title": %s, "date": %s, "type": %s,\n' \
+        "$(js "$(meta_get "$readme" title)")" "$(js "$(meta_get "$readme" date)")" "$(js "$(meta_get "$readme" type)")"
+      printf '     "notes": %s,\n' "$(meta_body "$readme" | json_str)"
+      if [ -f "$d/site/index.html" ]; then printf '     "site": %s,\n' "$(js "days/$(basename "$d")/site/index.html")"
+      else printf '     "site": null,\n'; fi
+      printf '     "media": ['; msep=""
+      if [ -d "$d/media" ]; then
+        while IFS= read -r f; do
+          kind="$(media_kind "$f")"; [ -n "$kind" ] || continue
+          printf '%s{"src": %s, "kind": "%s"}' "$msep" "$(js "${f#"$ROOT"/}")" "$kind"; msep=", "
+        done < <(find "$d/media" -maxdepth 1 -type f ! -name '.*' | sort)
+      fi
+      if [ -f "$d/media.txt" ]; then
+        while IFS= read -r f; do
+          case "$f" in ""|\#*) continue ;; esac
+          kind="$(media_kind "$f")"; [ -n "$kind" ] || kind=image
+          printf '%s{"src": %s, "kind": "%s"}' "$msep" "$(js "$f")" "$kind"; msep=", "
+        done < "$d/media.txt"
+      fi
+      printf '],\n     "iterations": ['; msep=""
+      for f in "$d"/v[0-9][0-9]; do
+        [ -d "$f" ] || continue
+        local idate="" inote=""
+        [ -f "$f/_iteration.txt" ] && IFS=$'\t' read -r idate inote < "$f/_iteration.txt" || true
+        printf '%s{"id": %s, "path": %s, "date": %s, "note": %s}' "$msep" "$(js "$(basename "$f")")" \
+          "$(js "days/$(basename "$d")/$(basename "$f")/index.html")" "$(js "$idate")" "$(js "$inote")"; msep=", "
+      done
+      printf '],\n     "log": ['; msep=""
+      if [ -f CHANGELOG.md ]; then
+        while IFS=$'\t' read -r f first; do
+          printf '%s{"date": %s, "msg": %s}' "$msep" "$(js "$f")" "$(js "$first")"; msep=", "
+        done < <(awk -v t="**Day $(printf %02d "$n")** · " 'index($0,t){ s=$0; sub(/^- /,"",s); dt=substr(s,1,16); m=substr(s,index(s,t)+length(t)); print dt "\t" m }' CHANGELOG.md)
+      fi
+      printf ']}'
+    done
+    printf '\n  ]\n};\n'
+  } > "$tmp"
+  mv "$tmp" "$out"
+  info "rebuilt $out"
+}
+
+cmd_save() { # [day] message — snapshot, log, rebuild, commit, push
+  local n="" msg
+  if [ $# -ge 2 ] && is_day_arg "$1"; then n="$(resolve_day "$1")"; shift; fi
+  msg="$*"; [ -n "$msg" ] || die "usage: ./30 save [day] \"what changed\""
+  if [ -n "$n" ]; then require_day "$n"; cmd_snapshot "$n" "$msg"; fi
+  changelog_add "$n" "$msg"
+  cmd_build
+  g add -A
+  if g diff --cached --quiet; then info "nothing to commit"; return 0; fi
+  if [ -n "$n" ]; then g commit -q -m "Day $(printf %02d "$n"): $msg"; else g commit -q -m "$msg"; fi
+  info "committed: $(g log -1 --format=%s)"
+  if g remote get-url origin >/dev/null 2>&1; then
+    g push -q origin HEAD && info "pushed to $(repo_url)" || echo "⚠︎ push failed — commit is saved locally; retry with: ./30 push"
+  else
+    echo "⚠︎ no GitHub remote yet — commit is local only"
+  fi
+}
+
+cmd_push() { g push origin HEAD; }
+
+cmd_status() {
+  local t n d done_n=0
+  t="$(today_num)"
+  echo "30 Days — started $START_DATE, today is day $t"
+  for n in $(seq 1 "$TOTAL_DAYS"); do
+    d="$(day_dir "$n")"
+    if [ -f "$d/README.md" ]; then done_n=$((done_n+1)); printf '  %02d ✓ %s\n' "$n" "$(meta_get "$d/README.md" title)"
+    elif [ "$n" -le "$t" ]; then printf '  %02d · (empty)\n' "$n"; fi
+  done
+  echo "$done_n/$TOTAL_DAYS days made"
+}
+
+cmd_open() { cmd_build >/dev/null; open "$ROOT/index.html"; }
+
+cmd_serve() { # local web server (macOS ruby), like GitHub Pages
+  local port="${1:-8030}"
+  cmd_build >/dev/null
+  info "serving at http://localhost:$port (ctrl-c to stop)"
+  exec ruby -run -e httpd "$ROOT" -p "$port"
+}
+
+cmd_help() {
+  cat <<'EOF'
+./30 — 30 Days helper. <day> is a number (1–30) or "today".
+
+  ./30 new <day> "Title" [website|image|video|mixed|other]   start a day
+  ./30 site <day>                       add a website starter to a day
+  ./30 add <day> [--r2] <files/folders> add images/videos (HEIC → JPG automatically)
+  ./30 snapshot <day> ["note"]          freeze the site as a new iteration (vNN)
+  ./30 save [<day>] "what changed"      snapshot + changelog + commit + push
+  ./30 build                            regenerate data/manifest.js
+  ./30 open                             view the gallery locally in your browser
+  ./30 serve [port]                     same, via a local web server (default :8030)
+  ./30 status                           which days are done
+  ./30 push                             retry a push
+EOF
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  new|site|add|snapshot|save|build|push|status|open|serve|help) "cmd_$cmd" "$@" ;;
+  *) cmd_help; exit 1 ;;
+esac

@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "gallery", "runtimeExecutable": "./30", "runtimeArgs": ["serve"], "port": 8030 }
+  ]
+}
