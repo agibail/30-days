@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Day 05 · Yellow of the Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --shade: #ffd800;
+      --ink: #231c02;
+      --soft: rgba(35,28,2,.6);
+      --line: rgba(35,28,2,.18);
+      --paper: #fbf9f3;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font: 16px/1.5 -apple-system, system-ui, "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background: var(--shade);
+      transition: background-color .6s ease, color .6s ease;
+      display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh;
+    }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      padding: 18px clamp(16px, 4vw, 40px) 0;
+      font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft);
+    }
+    header b { color: var(--ink); font-weight: 600; }
+
+    main {
+      flex: 1; display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 520px);
+      gap: clamp(28px, 6vw, 80px); align-items: center; justify-content: center;
+      padding: 28px clamp(16px, 4vw, 40px);
+    }
+
+    /* ---------- paint chip ---------- */
+    .chip {
+      background: var(--paper); border-radius: 6px; padding: 12px 12px 0;
+      box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 24px 50px -18px rgba(60,40,0,.45);
+      transform: rotate(-2deg); transition: transform .4s ease;
+    }
+    .chip:hover { transform: rotate(0deg); }
+    .chip .swatch {
+      aspect-ratio: 1 / 1.05; border-radius: 2px; background: var(--shade);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+      transition: background-color .6s ease;
+    }
+    .chip .label { padding: 14px 4px 16px; color: #231c02; }
+    .chip .num { font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .06em; color: #8a8270; }
+    .chip .name { font: 700 26px/1.1 Fraunces, Georgia, serif; margin: 6px 0 10px; letter-spacing: -.01em; }
+    .chip .codes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .code {
+      font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; padding: 6px 8px; border-radius: 4px;
+      background: #efebdf; border: 0; color: #4a4330;
+    }
+    .code:hover { background: #e4dfcf; }
+
+    /* ---------- fact ---------- */
+    .fact .kicker { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); margin: 0 0 14px; }
+    .fact h1 { font: 700 clamp(40px, 7vw, 76px)/.98 Fraunces, Georgia, serif; letter-spacing: -.03em; margin: 0 0 22px; }
+    .fact p.text { font: 500 clamp(18px, 2.2vw, 22px)/1.5 Fraunces, Georgia, serif; margin: 0; max-width: 34ch; text-wrap: pretty; }
+    .nav { display: flex; gap: 10px; align-items: center; margin-top: 30px; flex-wrap: wrap; }
+    .nav button {
+      border: 1.5px solid var(--ink); background: transparent; border-radius: 999px;
+      padding: 9px 16px; font-size: 14px; font-weight: 600;
+    }
+    .nav button:hover { background: var(--ink); color: var(--shade); }
+    .nav button[hidden] { display: none; }
+    .countdown { font: 500 13px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--soft); margin-left: 6px; }
+
+    /* ---------- fan deck of every shade ---------- */
+    footer { padding: 0 clamp(16px, 4vw, 40px) 22px; }
+    footer .cap { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); margin-bottom: 8px; }
+    .deck { display: flex; gap: 4px; overflow-x: auto; padding: 6px 2px 10px; scrollbar-width: thin; }
+    .deck button {
+      flex: 0 0 auto; width: 26px; height: 40px; border-radius: 3px; border: 2px solid var(--paper);
+      box-shadow: 0 2px 6px rgba(60,40,0,.25); transition: transform .15s ease;
+    }
+    .deck button:hover { transform: translateY(-4px); }
+    .deck button.on { transform: translateY(-6px); outline: 2px solid var(--ink); outline-offset: 1px; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0;
+      background: #231c02; color: #fff8d6; padding: 8px 14px; border-radius: 999px; font-size: 14px;
+      transition: .25s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 720px) {
+      main { grid-template-columns: 1fr; padding-top: 20px; gap: 28px; }
+      .chip { max-width: 260px; margin: 0 auto; width: 100%; }
+      .chip .swatch { aspect-ratio: 1.3 / 1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span>Yellow of the Day</span>
+    <b id="date"></b>
+  </header>
+
+  <main>
+    <div class="chip">
+      <div class="swatch"></div>
+      <div class="label">
+        <div class="num" id="num"></div>
+        <div class="name" id="chipName"></div>
+        <div class="codes">
+          <button class="code" id="hex" title="Copy hex"></button>
+          <button class="code" id="rgb" title="Copy RGB"></button>
+        </div>
+      </div>
+    </div>
+
+    <section class="fact">
+      <p class="kicker" id="kicker">Today's yellow</p>
+      <h1 id="name"></h1>
+      <p class="text" id="text"></p>
+      <div class="nav">
+        <button id="prev" aria-label="Previous day">← Yesterday</button>
+        <button id="next" aria-label="Next day">Tomorrow →</button>
+        <button id="today" hidden>Back to today</button>
+        <span class="countdown" id="countdown"></span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="cap">The whole fan deck · tap any chip</div>
+    <div class="deck" id="deck"></div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const YELLOWS = [
+      { name: "School Bus Yellow", hex: "#FFD800", fact: "In 1939 a conference organized by educator Frank W. Cyr picked one standard yellow for American school buses. Black lettering on that shade is easy to read in the dim early-morning light when kids are waiting for the bus." },
+      { name: "Gold", hex: "#FFD700", fact: "Gold looks yellow because of Einstein. Its electrons move so fast that relativity shifts how they absorb light, so gold soaks up blue and reflects warm yellow. Without that effect it would look silvery like most metals." },
+      { name: "Indian Yellow", hex: "#E3A857", fact: "Indian Yellow pigment was said to come from the urine of cows fed only mango leaves, collected and dried into hard balls. It vanished from paint boxes in the early 1900s, and the story is still debated." },
+      { name: "Gamboge", hex: "#E49B0F", fact: "Gamboge is a resin tapped from Garcinia trees in Southeast Asia, and the name comes from Cambodia. It has been used to dye Buddhist monks' robes. It is also a strong laxative, so painters were warned not to lick their brushes." },
+      { name: "Orpiment", hex: "#FCC93F", fact: "Orpiment is a glittering yellow mineral made of arsenic sulfide. Its name comes from the Latin auripigmentum, meaning \"gold pigment.\" Ancient Egyptian painters used it even though it is quite poisonous." },
+      { name: "Naples Yellow", hex: "#FADA5E", fact: "Naples Yellow, a lead antimonate, is one of the oldest synthetic pigments. Glassmakers and potters in the ancient Near East were using it in glazes thousands of years before it was named after Naples." },
+      { name: "Chrome Yellow", hex: "#FFA700", fact: "Van Gogh painted his Sunflowers with chrome yellow, a pigment made of lead chromate. Over 130 years, light has slowly darkened parts of it toward brown, so the flowers were brighter when he painted them." },
+      { name: "Cadmium Yellow", hex: "#FFF600", fact: "Cadmium was discovered in 1817 by the German chemist Friedrich Stromeyer while he was studying zinc. By the 1840s it had become a paint color, and Monet relied on its bright yellow for his sunlight." },
+      { name: "Imperial Yellow", hex: "#FFC512", fact: "In Ming and Qing dynasty China, the brightest yellow was reserved for the emperor. That is why the roof tiles of Beijing's Forbidden City glow golden while ordinary roofs were grey." },
+      { name: "Yellow Ochre", hex: "#CC7722", fact: "Ochre is just clay colored by iron oxide, and it may be humanity's first paint. People have been grinding and mixing it for at least 100,000 years. A paint workshop that old was found in Blombos Cave in South Africa." },
+      { name: "Saffron", hex: "#F4C430", fact: "Saffron is the stigma of a crocus flower, picked by hand three threads at a time. It takes roughly 150,000 flowers to make one kilogram, which is why it is the most expensive spice by weight." },
+      { name: "Turmeric", hex: "#E8B71A", fact: "Turmeric is a natural pH indicator. Its yellow curcumin turns reddish-brown in alkaline solutions, so a turmeric stain will turn red if you scrub it with baking soda or soap." },
+      { name: "Mustard", hex: "#FFDB58", fact: "Mustard seeds are actually a pale beige. American ballpark mustard gets its bright yellow mostly from added turmeric." },
+      { name: "Lemon", hex: "#FFF44F", fact: "Lemons are not a wild fruit. They are an ancient hybrid, most likely a cross between bitter orange and citron, that people have kept growing for centuries." },
+      { name: "Butter", hex: "#FFF1A6", fact: "Butter is yellow because of beta-carotene from the grass cows eat. Butter from grass-fed cows in summer is deeper yellow than winter butter, and some brands add a seed dye called annatto to keep the color the same all year." },
+      { name: "Egg Yolk", hex: "#FFC324", fact: "A yolk's color depends almost entirely on what the hen eats. Farmers can make yolks deeper orange-gold by adding marigold petals or paprika to the feed." },
+      { name: "Canary Yellow", hex: "#FFEF00", fact: "Wild canaries from the Canary Islands are mostly a streaky olive-green. The bright canary yellow was bred into pet birds over centuries of keeping them in cages." },
+      { name: "Sticky Note Yellow", hex: "#FFF68F", fact: "Post-it Notes are yellow by accident. When 3M engineers were making the first prototypes, the lab next door only had yellow scrap paper." },
+      { name: "Highlighter Yellow", hex: "#FFFF33", fact: "Fluorescent yellow highlighter mostly disappears when you photocopy it, so the copy doesn't get dark smudges. That is a big reason yellow became the default highlighter color." },
+      { name: "Optic Yellow", hex: "#CCFF00", fact: "Tennis balls used to be white. In 1972 the ITF approved optic yellow because it showed up better on color TV, but Wimbledon didn't switch until 1986." },
+      { name: "Maillot Jaune", hex: "#FFE500", fact: "The Tour de France leader wears yellow because the race's founding newspaper, L'Auto, was printed on yellow paper. The jersey first appeared in 1919." },
+      { name: "Taxi Yellow", hex: "#F7B500", fact: "John Hertz painted his Chicago cabs yellow in 1915 after reportedly reading a University of Chicago study that said yellow was the easiest color to spot from far away. Yellow Cab took off, and the color stuck to taxis everywhere." },
+      { name: "Simpsons Yellow", hex: "#FED90F", fact: "Matt Groening made the Simpsons yellow so that people flipping through channels would notice the show. The color made it look like the TV needed adjusting." },
+      { name: "Smiley Yellow", hex: "#FFCC00", fact: "Harvey Ball designed the yellow smiley face in 1963 in about ten minutes, for an insurance company's morale campaign. He was paid $45 and never trademarked it." },
+      { name: "Goldenrod", hex: "#DAA520", fact: "Thomas Edison spent his last years trying to make rubber from goldenrod. His friend Henry Ford gave him a Model T with tires made from it." },
+      { name: "Sunflower", hex: "#FFDA03", fact: "Young sunflowers follow the sun from east to west during the day and swing back overnight. Once they bloom they stop moving and face east, so the morning sun warms them and draws in more bees." },
+      { name: "Dandelion", hex: "#F0E130", fact: "A dandelion isn't one flower. Each of the 100 or more yellow \"petals\" is a complete tiny flower, called a floret, and each one makes its own seed for the puffball." },
+      { name: "Sulfur", hex: "#EDDF5A", fact: "Jupiter's moon Io is the most volcanically active place in the solar system. Its volcanoes spray sulfur, which paints the moon mottled yellow, orange and white like a pizza." },
+      { name: "Sodium Lamp", hex: "#FFB347", fact: "Old orange-yellow streetlights glow almost entirely at one wavelength, about 589 nanometers. Under them, red cars and blue cars look almost the same, because there is barely any other color in the light to reflect." },
+      { name: "Pure Screen Yellow", hex: "#FFFF00", fact: "Your screen has no yellow pixels. Every yellow you see on it, including this one, is red and green light mixed together, and your eyes read it as yellow." },
+      { name: "Illuminating", hex: "#F5DF4D", fact: "Pantone named \"Illuminating\" its Color of the Year for 2021, paired with Ultimate Gray. It was only the second time two colors shared the title." },
+      { name: "Minion Yellow", hex: "#F5E050", fact: "In 2015 Pantone officially added a color named after the Minions. It was one of the first Pantone colors ever named after a cartoon character." },
+      { name: "Hansa Yellow", hex: "#FFDF00", fact: "Hansa Yellow was one of the first synthetic organic yellows, made by the German dye company Hoechst around 1910. Painters liked it because it was bright like cadmium without the toxic heavy metal." },
+      { name: "Cosmic Latte", hex: "#FFF8E7", fact: "In 2002 astronomers averaged the light from 200,000 galaxies to find the color of the universe. Their first answer was turquoise because of a software bug. The corrected color was this creamy pale yellow-beige." }
+    ];
+
+    const $ = id => document.getElementById(id);
+    const DAY = 86400000;
+    const pad = n => String(n).padStart(2, "0");
+    const dayNumber = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY);
+    // shuffle once with a fixed seed so neighbouring days aren't neighbouring shades of the list
+    const order = (() => {
+      const idx = YELLOWS.map((_, i) => i);
+      let s = 1985;
+      const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
+      for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      return idx;
+    })();
+    const shadeFor = day => order[((day % order.length) + order.length) % order.length];
+
+    const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const lum = ([r, g, b]) => {
+      const f = c => (c /= 255) <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+      return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+    };
+
+    let offset = 0;
+
+    function render() {
+      const now = new Date();
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+      const i = shadeFor(dayNumber(date));
+      const y = YELLOWS[i];
+      const rgb = hexToRgb(y.hex);
+      const dark = lum(rgb) < .3;
+      const root = document.documentElement.style;
+      root.setProperty("--shade", y.hex);
+      root.setProperty("--ink", dark ? "#fffaf0" : "#231c02");
+      root.setProperty("--soft", dark ? "rgba(255,250,240,.75)" : "rgba(35,28,2,.6)");
+
+      $("date").textContent = date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+      $("kicker").textContent = offset === 0 ? "Today's yellow" : offset === 1 ? "Tomorrow's yellow" : offset === -1 ? "Yesterday's yellow" : offset < 0 ? `${-offset} days ago` : `${offset} days from now`;
+      $("name").textContent = y.name;
+      $("chipName").textContent = y.name;
+      $("text").textContent = y.fact;
+      $("num").textContent = `YEL-${pad(i + 1)} · ${pad(i + 1)} of ${YELLOWS.length}`;
+      $("hex").textContent = y.hex;
+      $("rgb").textContent = `rgb(${rgb.join(", ")})`;
+      $("today").hidden = offset === 0;
+      document.title = `${y.name} · Yellow of the Day`;
+      document.querySelectorAll(".deck button").forEach((b, n) => b.classList.toggle("on", n === i));
+      const on = document.querySelector(".deck .on");
+      if (on) on.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    }
+
+    function tick() {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const s = Math.floor((midnight - now) / 1000);
+      $("countdown").textContent = `next yellow in ${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+      if (s === 0 && offset === 0) setTimeout(render, 1100);
+    }
+
+    YELLOWS.forEach((y, i) => {
+      const b = document.createElement("button");
+      b.style.background = y.hex;
+      b.title = y.name;
+      b.setAttribute("aria-label", y.name);
+      b.onclick = () => {
+        const today = dayNumber(new Date());
+        for (let k = 0; k < YELLOWS.length; k++) if (shadeFor(today + k) === i) { offset = k; break; }
+        render();
+      };
+      $("deck").append(b);
+    });
+
+    function toast(msg) {
+      $("toast").textContent = msg;
+      $("toast").classList.add("show");
+      clearTimeout(toast.t);
+      toast.t = setTimeout(() => $("toast").classList.remove("show"), 1400);
+    }
+    async function copy(el) {
+      try { await navigator.clipboard.writeText(el.textContent); toast(`Copied ${el.textContent}`); }
+      catch { toast("Couldn't copy"); }
+    }
+
+    $("prev").onclick = () => { offset--; render(); };
+    $("next").onclick = () => { offset++; render(); };
+    $("today").onclick = () => { offset = 0; render(); };
+    $("hex").onclick = e => copy(e.currentTarget);
+    $("rgb").onclick = e => copy(e.currentTarget);
+    addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft") $("prev").click();
+      if (e.key === "ArrowRight") $("next").click();
+    });
+
+    render();
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 window.MANIFEST = {
-  "generated": "2026-11-05 13:38",
+  "generated": "2026-11-05 13:39",
   "start": "2026-10-30",
   "total": 30,
   "repo": "https://github.com/agibail/30-days",
@@ -30,10 +30,10 @@ window.MANIFEST = {
      "iterations": [{"id": "v01", "path": "days/day-04/v01/index.html", "date": "2026-11-05 13:25", "note": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}],
      "log": [{"date": "2026-11-05 13:25", "msg": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}]},
     {"day": 5, "slug": "day-05", "title": "Yellow of the Day", "date": "2026-11-03", "type": "website",
-     "notes": "What I'm making today, what I learned, what I'd change.",
+     "notes": "A new shade of yellow every day, each with a fun fact. [Open it](days/day-05/site/index.html)\n\n- The whole page turns that day's yellow, and a paint-store-style chip shows its name, hex and RGB. Tap a code to copy it.\n- **← Yesterday / Tomorrow →** (or the arrow keys) step through other days. A countdown shows when the next yellow arrives at midnight.\n- The **fan deck** at the bottom holds all 34 shades: pigments (Indian Yellow, Gamboge, Orpiment, Chrome, Cadmium), food (Saffron, Turmeric, Butter, Egg Yolk), and pop culture (School Bus, Taxi, Simpsons, Post-it, Optic Yellow tennis balls).\n- The shades are shuffled once with a fixed seed and assigned by date, so everyone sees the same yellow on the same day and the list repeats every 34 days.",
      "site": "days/day-05/site/index.html",
      "media": [],
-     "iterations": [],
-     "log": []}
+     "iterations": [{"id": "v01", "path": "days/day-05/v01/index.html", "date": "2026-11-05 13:39", "note": "Yellow of the Day: a new shade of yellow every day with a fun fact, paint-chip swatch and fan deck of 34 yellows"}],
+     "log": [{"date": "2026-11-05 13:39", "msg": "Yellow of the Day: a new shade of yellow every day with a fun fact, paint-chip swatch and fan deck of 34 yellows"}]}
   ]
 };
