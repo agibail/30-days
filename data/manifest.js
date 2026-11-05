@@ -22,6 +22,12 @@ window.MANIFEST = {
      "site": "days/day-03/site/index.html",
      "media": [],
      "iterations": [],
-     "log": []}
+     "log": []},
+    {"day": 4, "slug": "day-04", "title": "Label Maker", "date": "2026-11-02", "type": "website",
+     "notes": "A pretend label maker for my label art. I keep running out of real label tape, so this is where I type out labels and save them until I can print them for real. [Open the label maker](days/day-04/site/index.html)\n\n- Type on the machine's keys (or your own keyboard) and hit **PRINT**. The tape feeds out of the slot step by step, the cutter chomps, and the label drops onto the yellow wall.\n- **Drag labels** anywhere on the yellow wall to stick them. Drag one to the *peel off* circle (bottom left) to remove it. Double-click a stuck label to load it back into the machine.\n- **TAPE** cycles cassettes: white, black, clear, pink, mint, silver, plus classic embossed tape (red, black, blue, green) with raised, slightly crooked white letters. **FONT** cycles typefaces, **Aa** toggles caps.\n- **Tape box** (top right) keeps every label you print or **SAVE**. Tick *printed IRL* once you've made the real one. *Copy \"to print\" list* gives you the list to work through when you buy more tape. The LCD estimates the tape length in mm.\n- Sounds are made in the browser with Web Audio (♪ button to mute). Everything is saved in the browser (localStorage). Nothing is uploaded.\n- On a phone the tape comes out of the top of the machine, like a handheld.",
+     "site": "days/day-04/site/index.html",
+     "media": [],
+     "iterations": [{"id": "v01", "path": "days/day-04/v01/index.html", "date": "2026-11-05 13:25", "note": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}],
+     "log": [{"date": "2026-11-05 13:25", "msg": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}]}
   ]
 };
