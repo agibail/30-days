@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 3 · Shoe Finder</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2317140f'/><path d='M14 66 Q14 40 30 38 L40 38 Q46 50 62 54 L80 58 Q88 60 88 68 L88 72 L14 72 Z' fill='%23f2ece2'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3efe7; --paper: #fbf9f4; --ink: #17140f; --muted: #7a7266; --line: #d9d2c4;
+      --accent: #b4441f; --tile: #ffffff; --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14120f; --paper: #1c1915; --ink: #f2ece2; --muted: #9c9385; --line: #34302a;
+        --accent: #e8794f; --tile: #ece8e1; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+        color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, system-ui, "Helvetica Neue", sans-serif; }
+    button, input { font: inherit; color: inherit; }
+    a { color: inherit; }
+    .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+
+    header { padding: 28px 20px 8px; max-width: 1280px; margin: 0 auto; display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    header h1 { margin: 0; font-size: clamp(40px, 7vw, 76px); line-height: .9; letter-spacing: -.02em; }
+    header h1 em { color: var(--accent); }
+    header p { margin: 8px 0 0; color: var(--muted); max-width: 46ch; }
+    .btn { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+    .btn:hover { border-color: var(--ink); }
+    .btn.dark { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .btn:disabled { opacity: .45; cursor: default; }
+
+    main { max-width: 1280px; margin: 0 auto; padding: 12px 20px 60px; display: grid; grid-template-columns: 320px 1fr; gap: 28px; align-items: start; }
+    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+
+    aside { position: sticky; top: 16px; display: grid; gap: 14px; }
+    /* on phones: upload box, then results, then the side panels */
+    @media (max-width: 860px) { main { gap: 14px; } aside { display: contents; } main > section { order: 1; } aside > .panel { order: 2; } .drop { width: 100%; aspect-ratio: auto; height: 300px; } }
+    .drop { position: relative; aspect-ratio: 1; border: 1.5px dashed var(--line); border-radius: 18px; background: var(--paper); display: grid; place-items: center; text-align: center; cursor: pointer; overflow: hidden; transition: border-color .15s; }
+    .drop.over, .drop:hover { border-color: var(--ink); }
+    .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--tile); }
+    .drop .hint { padding: 24px; color: var(--muted); }
+    .drop .hint b { display: block; color: var(--ink); font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 28px; margin-bottom: 6px; }
+    .urlrow { display: flex; gap: 6px; }
+    .urlrow input, .steer input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+    .panel h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--bg); }
+    .steer { display: flex; gap: 6px; }
+    .shop { display: flex; flex-wrap: wrap; gap: 6px; }
+    .shop a { font-size: 13px; text-decoration: none; border-bottom: 1px solid var(--line); }
+    .shop a:hover { border-color: var(--ink); }
+    .toggles { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+    .toggles label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+
+    .status { min-height: 22px; color: var(--muted); font-size: 14px; display: flex; gap: 10px; align-items: center; }
+    .bar { flex: 0 0 120px; height: 3px; background: var(--line); border-radius: 3px; overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+    .trail { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding: 4px 0 10px; }
+    .trail:empty { display: none; }
+    .trail button { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--tile); padding: 0; overflow: hidden; cursor: pointer; }
+    .trail button.cur { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .trail img { width: 100%; height: 100%; object-fit: contain; }
+    .trail span { color: var(--muted); }
+
+    .results-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+    .results-head h2 { margin: 0; font-size: 34px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+    @media (max-width: 500px) { .grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
+    .card { position: relative; background: var(--paper); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); cursor: pointer; }
+    .card:hover { box-shadow: var(--shadow); }
+    .card .ph { position: relative; aspect-ratio: 1; background: var(--tile); overflow: hidden; }
+    .card .ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .card .meta { padding: 8px 10px 10px; font-size: 12.5px; line-height: 1.3; }
+    .card .meta b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .meta span { color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .sim { height: 2px; background: var(--line); margin-top: 6px; }
+    .card .sim i { display: block; height: 100%; background: var(--accent); }
+    .card .heart { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,.85); color: #17140f; cursor: pointer; font-size: 16px; line-height: 32px; padding: 0; }
+    .card .heart.on { color: var(--accent); }
+    .empty { color: var(--muted); padding: 40px 0; }
+    .empty .serif { font-size: 30px; color: var(--ink); display: block; margin-bottom: 6px; }
+    .examples { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .examples button { width: 96px; height: 96px; border-radius: 12px; border: 1px solid var(--line); background: var(--tile); padding: 0; cursor: pointer; overflow: hidden; }
+    .examples img { width: 100%; height: 100%; object-fit: contain; }
+
+    dialog { border: none; border-radius: 20px; padding: 0; width: min(880px, calc(100vw - 32px)); max-height: calc(100vh - 32px); background: var(--paper); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+    dialog::backdrop { background: rgba(20,18,15,.55); }
+    .detail { display: grid; grid-template-columns: 1.1fr 1fr; }
+    @media (max-width: 700px) { .detail { grid-template-columns: 1fr; } }
+    .detail .big { background: var(--tile); display: grid; place-items: center; min-height: 320px; }
+    .detail .big img { width: 100%; max-height: 70vh; object-fit: contain; }
+    .detail .info { padding: 22px; display: grid; gap: 12px; align-content: start; }
+    .detail h2 { margin: 0; font-size: 36px; line-height: 1; }
+    .detail dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; }
+    .detail dt { color: var(--muted); }
+    .detail dd { margin: 0; }
+    .detail .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .x { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.9); color: #17140f; cursor: pointer; font-size: 18px; }
+
+    .board { position: fixed; inset: 0 0 0 auto; width: min(380px, 100vw); background: var(--paper); border-left: 1px solid var(--line); transform: translateX(100%); transition: transform .25s; z-index: 10; display: flex; flex-direction: column; }
+    .board.open { transform: none; box-shadow: -20px 0 60px rgba(0,0,0,.15); }
+    .board header { padding: 18px; align-items: center; }
+    .board header h2 { margin: 0; font-size: 32px; }
+    .board .list { flex: 1; overflow: auto; padding: 0 18px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+    .board .foot { padding: 14px 18px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+    .note { font-size: 12.5px; color: var(--muted); }
+    footer { max-width: 1280px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 class="serif">Shoe <em>Finder</em></h1>
+      <p>Drop in a shoe you love. A vision model that runs in your browser finds the shoes that look most like it in the V&amp;A and Met fashion archives. Then keep following the ones you like.</p>
+    </div>
+    <button class="btn" id="boardBtn">♥ Board <span id="boardCount">0</span></button>
+  </header>
+
+  <main>
+    <aside>
+      <label class="drop" id="drop" tabindex="0">
+        <input type="file" id="file" accept="image/*" hidden>
+        <div class="hint"><b>Drop a shoe</b>Or click to choose a photo, or paste one with ⌘V.<br>Your image stays on this device.</div>
+      </label>
+      <form class="urlrow" id="urlForm">
+        <input id="url" type="url" placeholder="…or paste an image URL" autocomplete="off">
+        <button class="btn" type="submit">Go</button>
+      </form>
+
+      <div class="panel" id="tagsPanel" hidden>
+        <h3>What the model sees</h3>
+        <div class="chips" id="tags"></div>
+      </div>
+
+      <div class="panel" id="steerPanel" hidden>
+        <h3>Steer</h3>
+        <form class="steer" id="steerForm">
+          <input id="steer" placeholder="more like this, but… red, velvet, a platform" autocomplete="off">
+          <button class="btn" type="submit">↻</button>
+        </form>
+        <div class="note" id="steerNote">Mixes your words into the image search. Leave it empty to reset.</div>
+      </div>
+
+      <div class="panel" id="shopPanel" hidden>
+        <h3>Find ones to buy</h3>
+        <div class="shop" id="shop"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Archives</h3>
+        <div class="toggles">
+          <label><input type="checkbox" id="srcVam" checked> V&amp;A, London</label>
+          <label><input type="checkbox" id="srcMet" checked> The Met, New York</label>
+        </div>
+      </div>
+    </aside>
+
+    <section>
+      <div class="status" id="status"><span id="statusText">Loading…</span><div class="bar" id="bar" hidden><i></i></div></div>
+      <div class="trail" id="trail"></div>
+      <div class="results-head" id="resultsHead" hidden>
+        <h2 class="serif" id="resultsTitle">Closest matches</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="deeper">Dig deeper</button>
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty">
+        <span class="serif">Start with a shoe.</span>
+        Upload a photo or screenshot, or try one from the archive:
+        <div class="examples" id="examples"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Day 3 of 30. Images and records from the <a href="https://www.vam.ac.uk/collections">V&amp;A Collections API</a> and <a href="https://metmuseum.github.io/">The Met Collection API</a>. Matching uses OpenAI's CLIP model, running in your browser with Transformers.js.</footer>
+
+  <dialog id="dlg">
+    <button class="x" id="dlgClose" aria-label="Close">×</button>
+    <div class="detail">
+      <div class="big"><img id="dImg" alt=""></div>
+      <div class="info">
+        <h2 class="serif" id="dTitle"></h2>
+        <dl id="dMeta"></dl>
+        <div class="actions">
+          <button class="btn dark" id="dMore">More like this →</button>
+          <button class="btn" id="dSave">♡ Save</button>
+        </div>
+        <div class="actions" id="dLinks"></div>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="board" id="board">
+    <header><h2 class="serif">Board</h2><button class="btn" id="boardClose">Close</button></header>
+    <div class="list" id="boardList"></div>
+    <div class="foot">
+      <button class="btn dark" id="boardDiscover">Discover from my board</button>
+      <div class="note">Blends every shoe you've saved into one taste and searches for it. Saved on this device only.</div>
+    </div>
+  </div>
+
+<script type="module">
+import { AutoProcessor, AutoTokenizer, CLIPVisionModelWithProjection, CLIPTextModelWithProjection, RawImage, env }
+  from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1";
+
+env.allowLocalModels = false;
+const MODEL = "Xenova/clip-vit-base-patch32";
+const $ = (id) => document.getElementById(id);
+
+// ---------- vocabulary the model uses to describe a shoe ----------
+// q: words for archive searches, met: Met search phrase, shop: words for store searches
+const KINDS = [
+  ["sneaker", "a sneaker", "trainer", "sneakers", "sneakers"],
+  ["high-top sneaker", "a high-top sneaker", "trainer", "sneakers", "high top sneakers"],
+  ["running shoe", "a running shoe", "trainer", "sneakers", "running shoes"],
+  ["ankle boot", "an ankle boot", "ankle boot", "boots", "ankle boots"],
+  ["knee-high boot", "a tall knee-high boot", "boot", "boots", "knee high boots"],
+  ["chelsea boot", "a chelsea boot with elastic sides", "boot", "boots", "chelsea boots"],
+  ["cowboy boot", "a western cowboy boot", "boot", "boots", "cowboy boots"],
+  ["combat boot", "a lace-up combat boot", "boot", "boots", "lace up combat boots"],
+  ["button boot", "a victorian button boot", "boot", "boots", "victorian boots"],
+  ["pump", "a high heel pump court shoe", "court shoe", "pumps", "pumps"],
+  ["stiletto", "a pointed stiletto heel", "stiletto", "pumps", "stiletto heels"],
+  ["platform shoe", "a platform shoe with a thick sole", "platform", "platform shoes", "platform shoes"],
+  ["wedge", "a wedge heel shoe", "wedge", "shoes", "wedge shoes"],
+  ["mule", "a backless mule", "mule", "mules", "mules"],
+  ["slingback", "a slingback shoe", "slingback", "shoes", "slingback heels"],
+  ["mary jane", "a mary jane shoe with a strap", "bar shoe", "shoes", "mary jane shoes"],
+  ["t-bar shoe", "a 1920s t-bar shoe", "t-bar", "shoes", "t-bar shoes"],
+  ["ballet flat", "a ballet flat", "pumps", "shoes", "ballet flats"],
+  ["loafer", "a loafer", "loafer", "shoes", "loafers"],
+  ["oxford", "a lace-up oxford brogue", "oxford", "shoes", "oxford shoes"],
+  ["sandal", "a strappy sandal", "sandal", "sandals", "strappy sandals"],
+  ["flip-flop", "a flip-flop thong sandal", "sandal", "sandals", "thong sandals"],
+  ["clog", "a wooden clog", "clog", "shoes", "clogs"],
+  ["slipper", "a soft embroidered slipper", "slipper", "slippers", "slippers"],
+  ["espadrille", "an espadrille", "espadrille", "shoes", "espadrilles"],
+  ["moccasin", "a moccasin", "moccasin", "moccasins", "moccasins"],
+  ["buckle shoe", "an 18th-century buckled silk shoe", "buckle", "shoes", "buckle shoes"],
+  ["chopine", "a very tall renaissance chopine", "chopine", "shoes", "chopines"],
+  ["tabi", "a split-toe tabi", "tabi", "shoes", "tabi"],
+].map(([name, prompt, q, met, shop]) => ({ name, prompt, q, met, shop }));
+const COLORS = ["black", "white", "brown", "tan", "red", "pink", "blue", "green", "yellow", "orange", "purple", "silver", "gold", "cream", "multicolored"];
+const MATERIALS = ["leather", "suede", "patent leather", "satin", "silk", "velvet", "canvas", "embroidered", "beaded", "snakeskin", "brocade", "mesh", "rubber", "metallic"];
+const ERAS = ["18th-century", "Victorian", "1920s", "1940s", "1950s", "1960s", "1970s", "1980s", "1990s", "2000s", "contemporary"];
+
+// ---------- small IndexedDB cache for image embeddings ----------
+const idb = (() => {
+  let p;
+  const open = () => p ??= new Promise((res) => {
+    try {
+      const r = indexedDB.open("shoe-finder", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("emb");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    } catch { res(null); }
+  });
+  const tx = async (mode, fn) => {
+    const db = await open(); if (!db) return undefined;
+    return new Promise((res) => {
+      try { const req = fn(db.transaction("emb", mode).objectStore("emb")); req.onsuccess = () => res(req.result); req.onerror = () => res(undefined); }
+      catch { res(undefined); }
+    });
+  };
+  return { get: (k) => tx("readonly", (s) => s.get(k)), set: (k, v) => tx("readwrite", (s) => s.put(v, k)) };
+})();
+
+// ---------- status ----------
+function status(text, frac) {
+  $("statusText").textContent = text;
+  $("bar").hidden = frac == null;
+  if (frac != null) $("bar").firstElementChild.style.width = Math.round(frac * 100) + "%";
+}
+
+// ---------- models ----------
+const dl = {};
+function progress(e) {
+  if (e.status !== "progress" || !e.total) return;
+  dl[e.file + e.name] = [e.loaded, e.total];
+  const v = Object.values(dl), got = v.reduce((a, b) => a + b[0], 0), all = v.reduce((a, b) => a + b[1], 0);
+  if (got < all) status(`Downloading the model (${Math.round(got / 1e6)} / ${Math.round(all / 1e6)} MB, only the first time)…`, got / all);
+}
+let visionP, textP;
+// a failed download is forgotten so the next call tries again
+const vision = () => visionP ??= Promise.all([
+  AutoProcessor.from_pretrained(MODEL),
+  CLIPVisionModelWithProjection.from_pretrained(MODEL, { dtype: "q8", progress_callback: progress }),
+]).catch((e) => { visionP = null; throw e; });
+const textModel = () => textP ??= Promise.all([
+  AutoTokenizer.from_pretrained(MODEL),
+  CLIPTextModelWithProjection.from_pretrained(MODEL, { dtype: "q8", progress_callback: progress }),
+]).catch((e) => { textP = null; labelEmb = null; throw e; });
+
+const norm = (v) => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; return v.map((x) => x / s); };
+const dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+const split = (t) => { const [n, d] = t.dims; return Array.from({ length: n }, (_, i) => norm(t.data.slice(i * d, (i + 1) * d))); };
+
+let gpuQueue = Promise.resolve(); // run one inference at a time
+const serial = (fn) => (gpuQueue = gpuQueue.then(fn, fn));
+
+async function embedImages(images) {
+  const [processor, model] = await vision();
+  return serial(async () => split((await model(await processor(images))).image_embeds));
+}
+async function embedTexts(texts) {
+  const [tokenizer, model] = await textModel();
+  return serial(async () => split((await model(tokenizer(texts, { padding: true, truncation: true }))).text_embeds));
+}
+
+let labelEmb;
+async function labels() {
+  return labelEmb ??= (async () => {
+    const groups = {
+      kind: KINDS.map((k) => `a photo of ${k.prompt}`),
+      color: COLORS.map((c) => `a photo of a ${c} shoe`),
+      material: MATERIALS.map((m) => `a photo of a ${m} shoe`),
+      era: ERAS.map((e) => `a photo of a ${e} shoe`),
+    };
+    const out = {};
+    for (const [g, t] of Object.entries(groups)) out[g] = await embedTexts(t);
+    return out;
+  })();
+}
+const softmax = (xs) => { const m = Math.max(...xs), e = xs.map((x) => Math.exp(100 * (x - m))), s = e.reduce((a, b) => a + b, 0); return e.map((x) => x / s); };
+async function describe(vec) {
+  const L = await labels();
+  const rank = (g, names) => softmax(L[g].map((e) => dot(e, vec))).map((p, i) => ({ name: names[i], p, i })).sort((a, b) => b.p - a.p);
+  const kinds = rank("kind", KINDS.map((k) => k.name));
+  return {
+    kinds: kinds.slice(0, 3).map((k) => ({ ...KINDS[k.i], p: k.p })),
+    colors: rank("color", COLORS).slice(0, 2),
+    material: rank("material", MATERIALS)[0],
+    era: rank("era", ERAS)[0],
+  };
+}
+
+// ---------- archives ----------
+const FOOTWEAR = /shoe|boot|sandal|mule|slipper|clog|patten|pump|trainer|sneaker|chopine|loafer|footwear|galosh|geta|moccasin|espadrille|sabot|overshoe|wedge|oxford|brogue|stiletto|slingback|tabi/i;
+const pool = new Map(); // key -> item
+const fetched = new Set(); // query keys already pulled
+
+async function getJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function fromVam(q, page) {
+  const key = `vam:${q}:${page}`; if (fetched.has(key)) return []; fetched.add(key);
+  const u = `https://api.vam.ac.uk/v2/objects/search?q=${encodeURIComponent(q)}&images_exist=1&page_size=60&page=${page}`;
+  const d = await getJSON(u).catch(() => ({ records: [] }));
+  return (d.records || []).filter((r) => FOOTWEAR.test(r.objectType || "") && r._images?._iiif_image_base_url).map((r) => ({
+    key: "vam:" + r.systemNumber, source: "V&A",
+    title: r._primaryTitle || r.objectType, type: r.objectType,
+    maker: r._primaryMaker?.name || "", date: r._primaryDate || "", place: r._primaryPlace || "",
+    thumb: r._images._iiif_image_base_url + "full/!400,400/0/default.jpg",
+    large: r._images._iiif_image_base_url + "full/!1200,1200/0/default.jpg",
+    link: `https://collections.vam.ac.uk/item/${r.systemNumber}/`,
+  }));
+}
+
+// The Met's image server drops its CORS header for browsers, so the model reads Met photos through an image proxy
+const proxied = (u, w = 400) => `https://wsrv.nl/?url=${encodeURIComponent(u)}&w=${w}&h=${w}&fit=inside&output=jpg`;
+
+async function fromMet(q, page) {
+  const key = `met:${q}:${page}`; if (fetched.has(key)) return []; fetched.add(key);
+  const d = await getJSON(`https://collectionapi.metmuseum.org/public/collection/v1.1/search?q=${encodeURIComponent(q)}&hasImages=true&limit=36&offset=${(page - 1) * 36}`).catch(() => ({}));
+  const ids = (d.objectIDs || []).filter((id) => !pool.has("met:" + id));
+  const objs = await Promise.all(ids.map((id) => getJSON(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).catch(() => null)));
+  return objs.filter((o) => o && o.primaryImageSmall && FOOTWEAR.test(o.objectName + " " + o.title)).map((o) => ({
+    key: "met:" + o.objectID, source: "The Met",
+    title: o.title || o.objectName, type: o.objectName,
+    maker: o.artistDisplayName || "", date: o.objectDate || "", place: o.culture || o.country || "",
+    thumb: proxied(o.primaryImageSmall), large: o.primaryImage || o.primaryImageSmall, link: o.objectURL,
+  }));
+}
+
+// embed new candidates in small batches, caching by image URL
+async function embedItems(items, onBatch) {
+  const todo = [];
+  for (const it of items) {
+    if (pool.has(it.key)) continue;
+    pool.set(it.key, it);
+    const cached = await idb.get(it.thumb);
+    if (cached) { it.emb = cached; } else todo.push(it);
+  }
+  onBatch();
+  for (let i = 0; i < todo.length; i += 6) {
+    const batch = todo.slice(i, i + 6);
+    const imgs = await Promise.all(batch.map((it) => RawImage.fromURL(it.thumb).catch(() => null)));
+    const ok = batch.filter((_, j) => imgs[j]);
+    batch.filter((_, j) => !imgs[j]).forEach((it) => pool.delete(it.key));
+    if (ok.length) {
+      const embs = await embedImages(imgs.filter(Boolean));
+      ok.forEach((it, j) => { it.emb = embs[j]; idb.set(it.thumb, embs[j]); });
+    }
+    onBatch(Math.min(1, (i + 6) / todo.length));
+  }
+}
+
+// ---------- search state ----------
+let current = null;  // { vec, base, label, thumb, desc, terms }
+const trail = [];    // stops on the discovery path
+let page = 1;
+let runId = 0;
+
+function queriesFor(desc, steerWords) {
+  const vam = new Set(), met = new Set();
+  if (desc) {
+    for (const k of desc.kinds) { vam.add(k.q); met.add(k.met); }
+    vam.add(`${desc.material.name} ${desc.kinds[0].q}`);
+  } else met.add("shoes");
+  if (steerWords) { vam.add(steerWords); met.add(steerWords + " shoes"); }
+  vam.add("shoe");
+  return { vam: [...vam], met: [...met].slice(0, 2) };
+}
+
+async function gather(desc, steerWords, pg) {
+  const { vam, met } = queriesFor(desc, steerWords);
+  const jobs = [];
+  if ($("srcVam").checked) for (const q of vam) jobs.push(fromVam(q, pg));
+  if ($("srcMet").checked) for (const q of met) jobs.push(fromMet(q, pg));
+  // a random slice of the whole shoe collection keeps discovery from narrowing too fast
+  if ($("srcVam").checked) jobs.push(fromVam("shoe", 2 + Math.floor(Math.random() * 60)));
+  return (await Promise.all(jobs)).flat();
+}
+
+async function search({ vec, thumb, label, fromKey, keepTrail }) {
+  const id = ++runId;
+  $("empty").hidden = true; $("resultsHead").hidden = false;
+  $("steer").value = ""; $("steerNote").textContent = "Mixes your words into the image search. Leave it empty to reset.";
+  page = 1;
+  current = { vec, base: vec, thumb, label, desc: null, fromKey };
+  if (!keepTrail) trail.length = 0;
+  trail.push({ vec, thumb, label, fromKey });
+  showQuery(thumb); renderTrail(); render();
+  // broad pull right away; targeted pull once the model has named the shoe
+  const described = describe(vec).then((desc) => {
+    if (id !== runId) return;
+    current.desc = desc; renderDesc(desc);
+    return pull(id, null, 1);
+  }).catch((err) => {
+    console.error(err);
+    if (id === runId) status("Couldn't load the part of the model that names shoes. Image matches still work; reload to retry.");
+  });
+  await pull(id, null, 1);
+  await described;
+}
+
+async function pull(id, steerWords, pg) {
+  status("Searching the archives…", 0);
+  const items = await gather(current.desc, steerWords, pg);
+  if (id !== runId) return;
+  let last = 0;
+  await embedItems(items, (f) => {
+    if (id !== runId) return;
+    if (f != null) status(`Comparing ${pool.size} archive shoes…`, f);
+    if (Date.now() - last > 350 || f === 1) { last = Date.now(); render(); }
+  });
+  if (id !== runId) return;
+  render();
+  status(`${pool.size} archive shoes compared. Tap any one to follow it.`);
+}
+
+// ---------- rendering ----------
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function ranked() {
+  if (!current) return [];
+  const seen = new Set(trail.map((t) => t.fromKey));
+  return [...pool.values()].filter((it) => it.emb && !seen.has(it.key))
+    .map((it) => ({ it, s: dot(current.vec, it.emb) })).sort((a, b) => b.s - a.s).slice(0, 60);
+}
+
+function render() {
+  const rows = ranked();
+  const top = rows[0]?.s ?? 1, bottom = rows.at(-1)?.s ?? 0;
+  $("grid").innerHTML = rows.map(({ it, s }) => `
+    <div class="card" data-key="${esc(it.key)}">
+      <div class="ph"><img loading="lazy" src="${esc(it.thumb)}" alt="${esc(it.title)}"></div>
+      <button class="heart ${board.has(it.key) ? "on" : ""}" data-heart="${esc(it.key)}" aria-label="Save">${board.has(it.key) ? "♥" : "♡"}</button>
+      <div class="meta"><b>${esc(it.title)}</b><span>${esc([it.date, it.maker || it.place].filter(Boolean).join(" · "))}</span><span>${esc(it.source)}</span>
+        <div class="sim"><i style="width:${Math.round(30 + 70 * (s - bottom) / Math.max(1e-6, top - bottom))}%"></i></div></div>
+    </div>`).join("");
+}
+
+function renderTrail() {
+  $("trail").innerHTML = trail.map((t, i) =>
+    (i ? "<span>→</span>" : "") + `<button data-trail="${i}" class="${i === trail.length - 1 ? "cur" : ""}" title="${esc(t.label)}"><img src="${esc(t.thumb)}" alt=""></button>`).join("");
+  $("resultsTitle").textContent = trail.length > 1 ? `Step ${trail.length}: like the ${trail.at(-1).label}` : `Closest to ${trail[0]?.label || "your shoe"}`;
+}
+
+function shopQuery(desc, extra) {
+  return [extra, desc.colors[0].name, desc.material.name, desc.kinds[0].shop].filter(Boolean).join(" ");
+}
+function shopLinks(q, imageUrl) {
+  const e = encodeURIComponent(q);
+  const links = [];
+  if (imageUrl) links.push(["Google Lens", `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imageUrl)}`]);
+  links.push(
+    ["Google Shopping", `https://www.google.com/search?tbm=shop&q=${e}`],
+    ["eBay", `https://www.ebay.com/sch/i.html?_nkw=${e}`],
+    ["Grailed", `https://www.grailed.com/shop?query=${e}`],
+    ["Depop", `https://www.depop.com/search/?q=${e}`],
+    ["Vestiaire", `https://www.vestiairecollective.com/search/?q=${e}`],
+    ["The RealReal", `https://www.therealreal.com/products?keywords=${e}`],
+    ["Pinterest", `https://www.pinterest.com/search/pins/?q=${e}`],
+  );
+  return links.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${n}</a>`).join(" ");
+}
+
+function renderDesc(desc, steerWords) {
+  $("tags").innerHTML = [
+    ...desc.kinds.map((k) => `<span class="chip">${esc(k.name)}</span>`),
+    ...desc.colors.map((c) => `<span class="chip">${esc(c.name)}</span>`),
+    `<span class="chip">${esc(desc.material.name)}</span>`,
+    `<span class="chip">${esc(desc.era.name)} style</span>`,
+  ].join("");
+  $("shop").innerHTML = shopLinks(shopQuery(desc, steerWords), current?.fromKey ? pool.get(current.fromKey)?.large : null);
+  $("tagsPanel").hidden = $("steerPanel").hidden = $("shopPanel").hidden = false;
+}
+
+// ---------- detail dialog ----------
+let open = null;
+function showDetail(key) {
+  const it = pool.get(key) || board.get(key); if (!it) return;
+  open = it;
+  $("dImg").src = it.large; $("dImg").alt = it.title;
+  $("dTitle").textContent = it.title;
+  $("dMeta").innerHTML = [["Type", it.type], ["Date", it.date], ["Maker", it.maker], ["Place", it.place], ["Archive", it.source]]
+    .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+  $("dSave").textContent = board.has(it.key) ? "♥ Saved" : "♡ Save";
+  $("dLinks").innerHTML = `<a class="btn" href="${esc(it.link)}" target="_blank" rel="noopener">Open in archive ↗</a>
+    <a class="btn" href="https://lens.google.com/uploadbyurl?url=${encodeURIComponent(it.large)}" target="_blank" rel="noopener">Find similar to buy ↗</a>`;
+  $("dlg").showModal();
+}
+$("dlgClose").onclick = () => $("dlg").close();
+$("dlg").addEventListener("click", (e) => { if (e.target === $("dlg")) $("dlg").close(); });
+$("dMore").onclick = async () => {
+  const it = open; $("dlg").close();
+  if (!it.emb) it.emb = await idb.get(it.thumb);
+  if (!it.emb) { const img = await RawImage.fromURL(it.thumb); it.emb = (await embedImages([img]))[0]; }
+  pool.set(it.key, it);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  search({ vec: it.emb, thumb: it.thumb, label: it.title.toLowerCase(), fromKey: it.key, keepTrail: true });
+};
+$("dSave").onclick = () => { toggleSave(open); $("dSave").textContent = board.has(open.key) ? "♥ Saved" : "♡ Save"; };
+
+// ---------- board (saved shoes, this device only) ----------
+const board = new Map();
+try { for (const it of JSON.parse(localStorage.getItem("shoe-finder-board") || "[]")) board.set(it.key, it); } catch {}
+function saveBoard() {
+  try { localStorage.setItem("shoe-finder-board", JSON.stringify([...board.values()].map(({ emb, ...rest }) => rest))); } catch {}
+  $("boardCount").textContent = board.size;
+  $("boardList").innerHTML = board.size ? [...board.values()].reverse().map((it) => `
+    <div class="card" data-key="${esc(it.key)}"><div class="ph"><img src="${esc(it.thumb)}" alt=""></div>
+      <button class="heart on" data-heart="${esc(it.key)}" aria-label="Remove">♥</button>
+      <div class="meta"><b>${esc(it.title)}</b><span>${esc(it.date)}</span></div></div>`).join("")
+    : `<p class="note" style="grid-column:1/-1">Tap ♡ on any shoe to save it here.</p>`;
+  $("boardDiscover").disabled = !board.size;
+}
+function toggleSave(it) {
+  if (board.has(it.key)) board.delete(it.key); else board.set(it.key, it);
+  saveBoard(); render();
+}
+saveBoard();
+$("boardBtn").onclick = () => $("board").classList.add("open");
+$("boardClose").onclick = () => $("board").classList.remove("open");
+$("boardDiscover").onclick = async () => {
+  $("board").classList.remove("open");
+  status("Blending your board…");
+  const vecs = [];
+  for (const it of board.values()) {
+    let e = pool.get(it.key)?.emb || await idb.get(it.thumb);
+    if (!e) { const img = await RawImage.fromURL(it.thumb).catch(() => null); if (img) e = (await embedImages([img]))[0]; }
+    if (e) vecs.push(e);
+  }
+  if (!vecs.length) return status("Couldn't load your saved shoes.");
+  const mean = norm(vecs[0].map((_, i) => vecs.reduce((s, v) => s + v[i], 0)));
+  search({ vec: mean, thumb: [...board.values()].at(-1).thumb, label: "your board" });
+};
+
+// clicks on cards (results + board)
+document.addEventListener("click", (e) => {
+  const h = e.target.closest("[data-heart]");
+  if (h) { e.stopPropagation(); const it = pool.get(h.dataset.heart) || board.get(h.dataset.heart); if (it) toggleSave(it); return; }
+  const c = e.target.closest(".card[data-key]");
+  if (c) { $("board").classList.remove("open"); showDetail(c.dataset.key); return; }
+  const t = e.target.closest("[data-trail]");
+  if (t) {
+    const i = +t.dataset.trail; const stop = trail[i];
+    trail.length = i;
+    search({ ...stop, keepTrail: true });
+  }
+});
+
+// ---------- input: upload, drop, paste, url ----------
+async function useBlob(blob, label = "your shoe") {
+  const url = URL.createObjectURL(blob);
+  showQuery(url);
+  status("Loading the vision model…");
+  const img = await RawImage.fromBlob(blob);
+  const [vec] = await embedImages([img]);
+  search({ vec, thumb: url, label });
+}
+function showQuery(src) {
+  const d = $("drop");
+  d.querySelector("img")?.remove();
+  const img = document.createElement("img"); img.src = src; img.alt = "Your shoe";
+  d.appendChild(img);
+}
+async function useUrl(u) {
+  status("Fetching the image…");
+  for (const src of [u, proxied(u, 600)]) {
+    try {
+      const r = await fetch(src); if (!r.ok) throw 0;
+      const blob = await r.blob(); if (!blob.type.startsWith("image/")) throw 0;
+      return useBlob(blob);
+    } catch {}
+  }
+  status("Couldn't load that image. Save it and drop it in instead.");
+}
+$("file").onchange = () => { const f = $("file").files[0]; if (f) useBlob(f); };
+const drop = $("drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", (e) => {
+  e.preventDefault(); drop.classList.remove("over");
+  const f = [...e.dataTransfer.files].find((f) => f.type.startsWith("image/"));
+  if (f) return useBlob(f);
+  const u = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+  if (u) useUrl(u.trim());
+});
+drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
+document.addEventListener("paste", (e) => {
+  if (e.target.matches("input")) return;
+  const f = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith("image/"));
+  if (f) useBlob(f);
+});
+$("urlForm").onsubmit = (e) => { e.preventDefault(); const u = $("url").value.trim(); if (u) useUrl(u); };
+
+// ---------- steer + dig deeper ----------
+$("steerForm").onsubmit = async (e) => {
+  e.preventDefault();
+  if (!current) return;
+  const words = $("steer").value.trim();
+  const id = ++runId;
+  if (!words) { current.vec = current.base; if (current.desc) renderDesc(current.desc); render(); return status("Back to the original shoe."); }
+  status("Mixing in your words…");
+  const [t] = await embedTexts([`a photo of a ${words} shoe`]);
+  // image–text similarity is much weaker than image–image, so give the words real weight
+  current.vec = norm(current.base.map((x, i) => x + 1.6 * t[i]));
+  $("steerNote").textContent = `Showing shoes like this one, pushed toward “${words}”.`;
+  if (current.desc) renderDesc(current.desc, words);
+  render();
+  await pull(id, words, 1);
+};
+$("deeper").onclick = async () => {
+  if (!current) return;
+  const id = ++runId;
+  await pull(id, $("steer").value.trim() || null, ++page);
+};
+["srcVam", "srcMet"].forEach((k) => $(k).onchange = () => { if (current) pull(++runId, null, page); });
+
+// ---------- start-up: examples from the archive, warm the models ----------
+(async () => {
+  status("Loading archive examples…");
+  const ex = await fromVam("platform shoes", 1).catch(() => []);
+  const items = ex.slice(0, 6);
+  $("examples").innerHTML = items.map((it, i) => `<button data-ex="${i}" title="${esc(it.title)}"><img src="${esc(it.thumb)}" alt="${esc(it.title)}"></button>`).join("");
+  fetched.clear(); // let real searches reuse that page
+  $("examples").onclick = async (e) => {
+    const b = e.target.closest("[data-ex]"); if (!b) return;
+    const it = items[+b.dataset.ex];
+    showQuery(it.thumb);
+    status("Loading the vision model…");
+    const [vec] = await embedImages([await RawImage.fromURL(it.thumb)]);
+    it.emb = vec; pool.set(it.key, it);
+    search({ vec, thumb: it.thumb, label: it.title.toLowerCase(), fromKey: it.key });
+  };
+  status("Loading the vision model…");
+  await vision();
+  status("Ready. Drop in a shoe.");
+  labels().catch(() => {}); // warm up the describer in the background
+})().catch((err) => { console.error(err); status("Something went wrong loading the model. Try reloading."); });
+</script>
+</body>
+</html>

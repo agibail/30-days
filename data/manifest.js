@@ -1,5 +1,5 @@
 window.MANIFEST = {
-  "generated": "2026-11-05 13:35",
+  "generated": "2026-11-05 13:38",
   "start": "2026-10-30",
   "total": 30,
   "repo": "https://github.com/agibail/30-days",
@@ -18,16 +18,22 @@ window.MANIFEST = {
      "iterations": [{"id": "v01", "path": "days/day-02/v01/index.html", "date": "2026-11-05 13:20", "note": "Add Deep Watch: CCTV-style wall of 16 live underwater ocean cams"}],
      "log": [{"date": "2026-11-05 13:20", "msg": "Add Deep Watch: CCTV-style wall of 16 live underwater ocean cams"}]},
     {"day": 3, "slug": "day-03", "title": "Shoe Finder", "date": "2026-11-01", "type": "website",
-     "notes": "What I'm making today, what I learned, what I'd change.",
+     "notes": "Reverse image search for shoes, aimed at fashion archives. Drop in a photo of a shoe you like and it finds the closest-looking shoes in the **V&A** (London) and **The Met Costume Institute** (New York). [Open the app](days/day-03/site/index.html)\n\n- **Matches by look, not keywords.** OpenAI's CLIP model runs *in the browser* (Transformers.js), so your photo never leaves the device. It turns every shoe into a 512-number \"look\" vector and ranks the archive by how close each one is.\n- **Discovery walk.** Tap any result → *More like this* to search from that shoe instead. The trail at the top lets you jump back to any step.\n- **Steer.** Type \"red velvet\" or \"a platform\" to push the search toward those words while keeping the shape of your shoe.\n- **What the model sees.** It also names the shoe (type, colour, material, era), and those words drive which archive records get pulled and the *Find ones to buy* links (Google Shopping, eBay, Grailed, Depop, Vestiaire, The RealReal). Each archive shoe has a Google Lens link to find similar ones for sale.\n- **Board.** ♡ shoes to save them on this device, then *Discover from my board* blends all of them into one taste and searches for it.\n\nHow it works: the archive APIs are searched live with the model's words, plus a random slice of the V&A's ~7,900 shoes so results don't narrow too fast. Each archive photo gets embedded once and cached in IndexedDB, so repeat searches are fast. *Dig deeper* pulls more pages.\n\nNotes:\n- First visit downloads the model (~150 MB). After that the browser keeps it cached.\n- The Met's image server won't let browsers read its photos directly, so Met thumbnails go through the wsrv.nl image proxy. Pasted image URLs from sites that block reading also fall back to that proxy (uploaded files are never sent anywhere).\n- Could add next: more archives (Cooper Hewitt and Europeana need API keys), a precomputed index so search is instant, and a camera button for snapping shoes on the street.",
      "site": "days/day-03/site/index.html",
      "media": [],
-     "iterations": [],
-     "log": []},
+     "iterations": [{"id": "v01", "path": "days/day-03/v01/index.html", "date": "2026-11-05 13:38", "note": "Shoe Finder: reverse image search for shoes across the V&A and Met fashion archives, with a discovery trail, steering words, shop links and a saved board"}],
+     "log": [{"date": "2026-11-05 13:38", "msg": "Shoe Finder: reverse image search for shoes across the V&A and Met fashion archives, with a discovery trail, steering words, shop links and a saved board"}]},
     {"day": 4, "slug": "day-04", "title": "Label Maker", "date": "2026-11-02", "type": "website",
      "notes": "A pretend label maker for my label art. I keep running out of real label tape, so this is where I type out labels and save them until I can print them for real. [Open the label maker](days/day-04/site/index.html)\n\n- Type on the machine's keys (or your own keyboard) and hit **PRINT**. The tape feeds out of the slot step by step, the cutter chomps, and the label drops onto the yellow wall.\n- **Drag labels** anywhere on the yellow wall to stick them. Drag one to the *peel off* circle (bottom left) to remove it. Double-click a stuck label to load it back into the machine.\n- **TAPE** cycles cassettes: white, black, clear, pink, mint, silver, plus classic embossed tape (red, black, blue, green) with raised, slightly crooked white letters. **FONT** cycles typefaces, **Aa** toggles caps.\n- **Tape box** (top right) keeps every label you print or **SAVE**. Tick *printed IRL* once you've made the real one. *Copy \"to print\" list* gives you the list to work through when you buy more tape. The LCD estimates the tape length in mm.\n- Sounds are made in the browser with Web Audio (♪ button to mute). Everything is saved in the browser (localStorage). Nothing is uploaded.\n- On a phone the tape comes out of the top of the machine, like a handheld.",
      "site": "days/day-04/site/index.html",
      "media": [],
      "iterations": [{"id": "v01", "path": "days/day-04/v01/index.html", "date": "2026-11-05 13:25", "note": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}],
-     "log": [{"date": "2026-11-05 13:25", "msg": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}]}
+     "log": [{"date": "2026-11-05 13:25", "msg": "Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape"}]},
+    {"day": 5, "slug": "day-05", "title": "Yellow of the Day", "date": "2026-11-03", "type": "website",
+     "notes": "What I'm making today, what I learned, what I'd change.",
+     "site": "days/day-05/site/index.html",
+     "media": [],
+     "iterations": [],
+     "log": []}
   ]
 };
