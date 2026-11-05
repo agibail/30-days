@@ -3,6 +3,7 @@
 Every change to the 30 Days project, newest first. Entries are added by `./30 save`.
 
 <!-- new entries go below this line -->
+- 2026-11-05 16:35 · **Day 06** · Open with my hands on a white background by default, cut out cleanly by keying the plain background; title in Source Code Pro Bold
 - 2026-11-05 16:32 · **Day 03** · Switch all type to Helvetica
 - 2026-11-05 16:16 · **Day 06** · Show only your hands: the background and you are cut away automatically, the hands sit on a clean backdrop, and Download PNG is transparent
 - 2026-11-05 16:16 · **Day 03** · New colours: Caribbean azure, hot pink and putting green

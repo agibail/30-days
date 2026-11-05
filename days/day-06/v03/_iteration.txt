@@ -1,0 +1,1 @@
+2026-11-05 16:35	Open with my hands on a white background by default, cut out cleanly by keying the plain background; title in Source Code Pro Bold
