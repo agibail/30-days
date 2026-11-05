@@ -1,5 +1,5 @@
 window.MANIFEST = {
-  "generated": "2026-11-05 14:51",
+  "generated": "2026-11-05 15:03",
   "start": "2026-10-30",
   "total": 30,
   "repo": "https://github.com/agibail/30days",
@@ -34,6 +34,12 @@ window.MANIFEST = {
      "site": "days/day-05/site/index.html", "link": "day-05/",
      "media": [],
      "iterations": [{"id": "v01", "path": "days/day-05/v01/index.html", "date": "2026-11-05 13:39", "note": "Yellow of the Day: a new shade of yellow every day with a fun fact, paint-chip swatch and fan deck of 34 yellows"}],
-     "log": [{"date": "2026-11-05 13:39", "msg": "Yellow of the Day: a new shade of yellow every day with a fun fact, paint-chip swatch and fan deck of 34 yellows"}]}
+     "log": [{"date": "2026-11-05 13:39", "msg": "Yellow of the Day: a new shade of yellow every day with a fun fact, paint-chip swatch and fan deck of 34 yellows"}]},
+    {"day": 7, "slug": "day-07", "title": "Swatch Card", "date": "2026-11-05", "type": "website",
+     "notes": "Turn the photos you only took because of the colours into paint-chip swatch cards. [Open it](days/day-07/site/index.html)\n\n- Drop, paste or choose photos. Each one becomes a card with its palette pulled out automatically.\n- The palette favours the colours that *stand out*, not just the most common ones: k-means in Lab colour space, then clusters are ranked by size and vividness and kept visibly distinct.\n- **Click the photo** to add the colour under your cursor (a loupe shows it first). **Click a band**, then the photo, to swap that colour for another spot.\n- Every colour gets a paint-store-style name worked out from the colour itself (\"Dusty Rose\", \"Deep Teal\", \"Bone\", \"Rust\"). Names and hex codes are editable.\n- Three layouts: **Tall**, **Wide**, and **Chips only** (a long paint strip with a tiny photo stamp). Slider for 2–9 colours; **Shuffle** tries another set.\n- **Download PNG** exports the card at full size (1200×1800 or 1800×1200).\n- Cards are saved in your browser (IndexedDB) and shown on a shelf, so they're still there next time. Nothing is uploaded anywhere.\n- iPhone HEIC photos only open in Safari; in other browsers use JPG or PNG.",
+     "site": "days/day-07/site/index.html", "link": "day-07/",
+     "media": [],
+     "iterations": [{"id": "v01", "path": "days/day-07/v01/index.html", "date": "2026-11-05 15:03", "note": "Swatch Card: turn colour photos into paint-chip cards with auto palettes, click-to-pick colours, paint-store names, three layouts, PNG download and a saved shelf"}],
+     "log": [{"date": "2026-11-05 15:03", "msg": "Swatch Card: turn colour photos into paint-chip cards with auto palettes, click-to-pick colours, paint-store names, three layouts, PNG download and a saved shelf"}]}
   ]
 };
