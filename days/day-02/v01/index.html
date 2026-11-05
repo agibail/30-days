@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 02 · Deep Watch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050a0c;
+      --panel: #0a1316;
+      --line: #15292e;
+      --ink: #b9f3e4;
+      --dim: #4d7a72;
+      --hot: #ff3b3b;
+      --amber: #ffc94a;
+      --cols: 3;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
+    body {
+      font: 13px/1.4 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh;
+    }
+    button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); padding: 5px 10px; cursor: pointer; }
+    button:hover { border-color: var(--dim); }
+    button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+    /* top bar */
+    header {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+      padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
+    }
+    .brand { font-family: VT323, monospace; font-size: 28px; letter-spacing: .08em; line-height: 1; }
+    .brand small { color: var(--dim); font-size: 16px; margin-left: 8px; }
+    .rec { display: inline-flex; align-items: center; gap: 6px; color: var(--hot); font-weight: 600; letter-spacing: .1em; }
+    .rec::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--hot); animation: blink 1.2s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    #clock { font-family: VT323, monospace; font-size: 22px; color: var(--amber); }
+    .spacer { flex: 1; }
+    .group { display: flex; gap: 4px; align-items: center; }
+    .group span { color: var(--dim); margin-right: 4px; }
+
+    /* wall of monitors */
+    main { padding: 10px; overflow: auto; }
+    #wall { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 6px; }
+    .cam {
+      position: relative; aspect-ratio: 16 / 9; background: #000; overflow: hidden;
+      border: 1px solid var(--line); cursor: pointer;
+    }
+    .cam.active { outline: 2px solid var(--amber); outline-offset: -2px; }
+    .cam .player, .cam iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+    /* zoom slightly to crop off YouTube's title bar & logo for a cleaner CCTV look */
+    .cam iframe { transform: scale(1.18); }
+    body.raw .cam iframe { transform: none; pointer-events: auto; }
+
+    .fx { position: absolute; inset: 0; pointer-events: none; }
+    .scan { background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.22) 2px 3px); mix-blend-mode: multiply; }
+    .vig { background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.65) 100%); }
+    body.night .cam .player-wrap { filter: grayscale(1) sepia(1) hue-rotate(95deg) saturate(2.2) contrast(1.15) brightness(1.05); }
+    body.mono .cam .player-wrap { filter: grayscale(1) contrast(1.2); }
+    body.clean .fx, body.clean .osd { display: none; }
+    .player-wrap { position: absolute; inset: 0; }
+
+    .osd {
+      position: absolute; inset: 0; pointer-events: none; padding: 8px 10px;
+      font-family: VT323, monospace; font-size: clamp(14px, 1.5vw, 20px); line-height: 1.05;
+      color: #fff; text-shadow: 0 0 2px #000, 1px 1px 0 #000;
+      display: grid; grid-template-rows: auto 1fr auto;
+    }
+    .osd .row { display: flex; justify-content: space-between; gap: 8px; }
+    .osd .tag { color: var(--amber); }
+    .osd .live { color: var(--hot); }
+    .osd .live::before { content: "● "; animation: blink 1.2s steps(2) infinite; }
+
+    .nosig {
+      position: absolute; inset: 0; display: none; place-items: center; text-align: center;
+      font-family: VT323, monospace; font-size: clamp(18px, 2.4vw, 34px); letter-spacing: .1em;
+      background: #000;
+    }
+    .nosig canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .35; }
+    .nosig b { position: relative; background: #000; padding: 4px 12px; font-weight: 400; }
+    .cam.dead .nosig { display: grid; }
+    .cam.loading .nosig { display: grid; }
+    .cam.loading .nosig b::after { content: "_"; animation: blink 1s steps(2) infinite; }
+
+    /* single-camera view */
+    body.solo #wall { --cols: 1 !important; grid-template-columns: 1fr; }
+    body.solo .cam:not(.active) { display: none; }
+    body.solo .cam.active { max-height: calc(100vh - 150px); aspect-ratio: 16 / 9; margin: 0 auto; width: min(100%, calc((100vh - 150px) * 16 / 9)); }
+    body.solo .cam.active .osd { font-size: clamp(18px, 2.2vw, 30px); padding: 14px 18px; }
+
+    /* footer: camera list */
+    footer { border-top: 1px solid var(--line); background: var(--panel); padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    footer .chip { font-size: 12px; padding: 3px 8px; }
+    footer .chip.on { border-color: var(--amber); color: var(--amber); }
+    footer .hint { color: var(--dim); margin-left: auto; font-size: 12px; }
+
+    @media (max-width: 760px) {
+      #wall { grid-template-columns: 1fr !important; }
+      header { padding: 10px 12px; }
+      .brand { font-size: 24px; }
+      .hide-sm { display: none; }
+      main { padding: 6px; }
+    }
+  </style>
+</head>
+<body class="night">
+  <header>
+    <div class="brand">DEEP·WATCH<small>NVR v0.2</small></div>
+    <div class="rec">REC</div>
+    <div id="clock">--:--:--</div>
+    <div class="spacer"></div>
+    <div class="group hide-sm" role="group" aria-label="Layout">
+      <span>GRID</span>
+      <button data-cols="2">2×2</button>
+      <button data-cols="3" aria-pressed="true">3×3</button>
+      <button data-cols="4">4×4</button>
+    </div>
+    <div class="group" role="group" aria-label="Look">
+      <span>MODE</span>
+      <button data-look="night" aria-pressed="true">NIGHT</button>
+      <button data-look="color">COLOR</button>
+      <button data-look="mono">B/W</button>
+      <button data-look="clean">CLEAN</button>
+    </div>
+    <div class="group">
+      <button id="tour" aria-pressed="false">▶ TOUR</button>
+      <button id="sound" aria-pressed="false">🔇</button>
+    </div>
+  </header>
+
+  <main><div id="wall"></div></main>
+
+  <footer>
+    <div id="list" style="display:contents"></div>
+    <span class="hint hide-sm">click a feed to go full · ←/→ switch · esc back · T tour</span>
+  </footer>
+
+  <script>
+    // Live YouTube streams from Monterey Bay Aquarium and explore.org.
+    // If a stream ends and gets a new ID, swap it here.
+    const CAMS = [
+      { id: "w3LjpFhySTg", name: "KELP FOREST",       place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "AQUARIUM" },
+      { id: "Sq-X4Ga1oyc", name: "EDGE OF WALL",      place: "UTILA, HONDURAS",       tz: "America/Tegucigalpa", gps: "16.090N 086.930W", kind: "REEF" },
+      { id: "n_GpVsz4nHU", name: "OPEN SEA",          place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "AQUARIUM" },
+      { id: "R9hDetC76qA", name: "REEFCAM",           place: "GRAND CAYMAN",          tz: "America/Cayman",      gps: "19.300N 081.100W", kind: "REEF" },
+      { id: "JH_NzhSsqis", name: "MARINE RESERVE",    place: "CATALINA ISLAND, CA",   tz: "America/Los_Angeles", gps: "33.445N 118.484W", kind: "OCEAN" },
+      { id: "1zcIUk66HX4", name: "TOP OF WALL",       place: "UTILA, HONDURAS",       tz: "America/Tegucigalpa", gps: "16.090N 086.930W", kind: "REEF" },
+      { id: "tEtg5Kg3voQ", name: "SHARK TANK",        place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "AQUARIUM" },
+      { id: "uWiJ9qCYxoo", name: "MANATEE SPRING",    place: "SILVER SPRINGS, FL",    tz: "America/New_York",    gps: "29.216N 082.053W", kind: "SPRING" },
+      { id: "jzx_n25g3kA", name: "SANDY CHANNEL",     place: "UTILA, HONDURAS",       tz: "America/Tegucigalpa", gps: "16.090N 086.930W", kind: "REEF" },
+      { id: "zL68biE6wAs", name: "MOON JELLIES",      place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "AQUARIUM" },
+      { id: "Kf-x20Yq0_A", name: "FRONT OF DOCK",     place: "UTILA, HONDURAS",       tz: "America/Tegucigalpa", gps: "16.090N 086.930W", kind: "REEF" },
+      { id: "dzmJXWmA2EM", name: "SPIDER CRABS",      place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "AQUARIUM" },
+      { id: "nmjlQlYygB4", name: "BACK CHANNEL",      place: "UTILA, HONDURAS",       tz: "America/Tegucigalpa", gps: "16.090N 086.930W", kind: "REEF" },
+      { id: "eQ_foBERmzA", name: "JELLIES",           place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "AQUARIUM" },
+      { id: "Lv9t0hZTvz4", name: "BACK OF DOCK",      place: "UTILA, HONDURAS",       tz: "America/Tegucigalpa", gps: "16.090N 086.930W", kind: "REEF" },
+      { id: "fVa6-zCBR7A", name: "THE BAY",           place: "MONTEREY BAY, CA",      tz: "America/Los_Angeles", gps: "36.618N 121.902W", kind: "SURFACE" },
+    ];
+
+    const $ = s => document.querySelector(s);
+    const wall = $("#wall"), list = $("#list");
+    const pad = n => String(n).padStart(2, "0");
+    let cols = 3, active = -1, tourTimer = null, muted = true;
+    const players = [];
+    const tiles = [];
+
+    // build the tiles
+    CAMS.forEach((c, i) => {
+      const el = document.createElement("div");
+      el.className = "cam loading";
+      el.innerHTML = `
+        <div class="player-wrap"><div class="player" id="p${i}"></div></div>
+        <div class="fx scan"></div><div class="fx vig"></div>
+        <div class="nosig"><canvas width="160" height="90"></canvas><b>CONNECTING</b></div>
+        <div class="osd">
+          <div class="row"><span><span class="tag">CAM ${pad(i + 1)}</span> ${c.name}</span><span class="live">LIVE</span></div>
+          <div></div>
+          <div class="row"><span>${c.place}<br>${c.gps}</span><span style="text-align:right">${c.kind}<br><span class="t" data-tz="${c.tz}"></span></span></div>
+        </div>`;
+      el.addEventListener("click", () => (document.body.classList.contains("solo") && active === i) ? exitSolo() : solo(i));
+      wall.appendChild(el);
+      tiles.push(el);
+
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = `${pad(i + 1)} ${c.name}`;
+      chip.addEventListener("click", () => solo(i));
+      list.appendChild(chip);
+    });
+
+    // static noise for dead / connecting feeds
+    function noise() {
+      document.querySelectorAll(".cam.loading canvas, .cam.dead canvas").forEach(cv => {
+        const ctx = cv.getContext("2d"), img = ctx.createImageData(cv.width, cv.height);
+        for (let p = 0; p < img.data.length; p += 4) {
+          const v = Math.random() * 255;
+          img.data[p] = img.data[p + 1] = img.data[p + 2] = v; img.data[p + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+      });
+      setTimeout(() => requestAnimationFrame(noise), 70);
+    }
+    noise();
+
+    // per-camera local clocks + header clock
+    function tick() {
+      const now = new Date();
+      $("#clock").textContent = now.toLocaleString("en-GB", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(",", "");
+      document.querySelectorAll(".t").forEach(t => {
+        t.textContent = now.toLocaleTimeString("en-GB", { timeZone: t.dataset.tz, hour12: false });
+      });
+    }
+    tick(); setInterval(tick, 1000);
+
+    // YouTube players
+    window.onYouTubeIframeAPIReady = () => {
+      CAMS.forEach((c, i) => {
+        players[i] = new YT.Player(`p${i}`, {
+          videoId: c.id,
+          playerVars: { autoplay: 1, mute: 1, controls: 0, playsinline: 1, modestbranding: 1, rel: 0, iv_load_policy: 3, disablekb: 1 },
+          events: {
+            onReady: e => { e.target.mute(); e.target.playVideo(); },
+            onStateChange: e => {
+              if (e.data === YT.PlayerState.PLAYING) setState(i, "ok");
+              if (e.data === YT.PlayerState.ENDED) setState(i, "dead");
+            },
+            onError: () => setState(i, "dead"),
+          },
+        });
+      });
+      // anything that never starts playing is treated as offline
+      setTimeout(() => tiles.forEach((t, i) => t.classList.contains("loading") && setState(i, "dead")), 25000);
+    };
+    function setState(i, s) {
+      const t = tiles[i];
+      t.classList.remove("loading", "dead");
+      if (s === "dead") { t.classList.add("dead"); t.querySelector(".nosig b").textContent = "NO SIGNAL"; t.querySelector(".live").textContent = "OFFLINE"; }
+      else t.querySelector(".live").textContent = "LIVE";
+    }
+    const s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(s);
+
+    // layout controls
+    function setCols(n) {
+      cols = n;
+      wall.style.setProperty("--cols", n);
+      document.querySelectorAll("[data-cols]").forEach(b => b.setAttribute("aria-pressed", b.dataset.cols == n));
+    }
+    document.querySelectorAll("[data-cols]").forEach(b => b.addEventListener("click", () => { exitSolo(); setCols(+b.dataset.cols); }));
+
+    document.querySelectorAll("[data-look]").forEach(b => b.addEventListener("click", () => {
+      document.body.classList.remove("night", "mono", "clean");
+      if (b.dataset.look !== "color") document.body.classList.add(b.dataset.look);
+      document.querySelectorAll("[data-look]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    }));
+
+    function solo(i) {
+      active = (i + CAMS.length) % CAMS.length;
+      document.body.classList.add("solo");
+      tiles.forEach((t, j) => t.classList.toggle("active", j === active));
+      document.querySelectorAll(".chip").forEach((c, j) => c.classList.toggle("on", j === active));
+      applySound();
+    }
+    function exitSolo() {
+      document.body.classList.remove("solo");
+      tiles.forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
+      active = -1;
+      stopTour();
+      applySound();
+    }
+
+    // sound: only the camera in full view gets audio
+    function applySound() {
+      players.forEach((p, j) => {
+        if (!p || !p.mute) return;
+        (!muted && j === active) ? p.unMute() : p.mute();
+      });
+    }
+    $("#sound").addEventListener("click", e => {
+      muted = !muted;
+      e.currentTarget.textContent = muted ? "🔇" : "🔊";
+      e.currentTarget.setAttribute("aria-pressed", !muted);
+      if (!muted && active < 0) solo(0);
+      applySound();
+    });
+
+    // tour: cycle through every camera full screen, like a guard's monitor
+    function stopTour() { clearInterval(tourTimer); tourTimer = null; $("#tour").setAttribute("aria-pressed", false); $("#tour").textContent = "▶ TOUR"; }
+    function startTour() {
+      solo(active < 0 ? 0 : active);
+      tourTimer = setInterval(() => solo(active + 1), 15000);
+      $("#tour").setAttribute("aria-pressed", true); $("#tour").textContent = "■ TOUR";
+    }
+    $("#tour").addEventListener("click", () => tourTimer ? stopTour() : startTour());
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") exitSolo();
+      else if (e.key === "ArrowRight") solo(active + 1);
+      else if (e.key === "ArrowLeft") solo(active - 1);
+      else if (e.key.toLowerCase() === "t") tourTimer ? stopTour() : startTour();
+    });
+  </script>
+</body>
+</html>
