@@ -3,6 +3,7 @@
 Every change to the 30 Days project, newest first. Entries are added by `./30 save`.
 
 <!-- new entries go below this line -->
+- 2026-11-05 13:49 · Short links for each day: agibail.github.io/30days/day-03/
 - 2026-11-05 13:40 · Move the gallery to agibail.github.io/30days
 - 2026-11-05 13:39 · **Day 05** · Yellow of the Day: a new shade of yellow every day with a fun fact, paint-chip swatch and fan deck of 34 yellows
 - 2026-11-05 13:38 · **Day 03** · Shoe Finder: reverse image search for shoes across the V&A and Met fashion archives, with a discovery trail, steering words, shop links and a saved board

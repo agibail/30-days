@@ -137,7 +137,7 @@
       viewer = `<section><h2>Website · iterations</h2>
         <div class="toolbar">${chips}<span class="spacer"></span>
           ${prev ? `<a class="chip ${compare ? "on" : ""}" href="#/day/${n}/${cur.id}${compare ? "" : "/compare"}">compare with ${esc(prev.id)}</a>` : ""}
-          <a class="chip" href="${src(cur.src)}" target="_blank" rel="noopener">open ↗</a>
+          <a class="chip" href="${src(cur.latest && d.link ? d.link : cur.src)}" target="_blank" rel="noopener">open ↗</a>
         </div>
         <p class="iter-note">${esc(cur.note)}</p>
         <div class="viewer ${showCompare ? "compare" : ""}">${showCompare ? paneHtml(prev) : ""}${paneHtml(cur)}</div>
