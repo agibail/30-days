@@ -3,6 +3,7 @@
 Every change to the 30 Days project, newest first. Entries are added by `./30 save`.
 
 <!-- new entries go below this line -->
+- 2026-11-05 13:35 · Card shades now run from warm yellow on day 1 to neon on day 30
 - 2026-11-05 13:27 · Give every day card its own shade of yellow
 - 2026-11-05 13:25 · **Day 04** · Label maker: type labels, watch them print and get cut, stick them on a yellow wall, tape box to save labels for real tape
 - 2026-11-05 13:20 · **Day 02** · Add Deep Watch: CCTV-style wall of 16 live underwater ocean cams
