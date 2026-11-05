@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Day 04 · Label Maker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --wall: #ffd23f;
+      --ink: #2a2206;
+      --body-hi: #4a4e57;
+      --body-lo: #1f2126;
+      --key-hi: #f6f4ee;
+      --key-lo: #d6d2c6;
+      --accent: #ff6a1a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      font: 15px/1.4 -apple-system, system-ui, "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 700px at 30% 20%, rgba(255,255,255,.28), transparent 60%),
+        radial-gradient(900px 600px at 80% 90%, rgba(190,120,0,.18), transparent 60%),
+        var(--wall);
+      -webkit-user-select: none; user-select: none;
+      touch-action: manipulation;
+    }
+    /* faint paper grain */
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .35;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(120,80,0,.05) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px);
+    }
+
+    /* ---------- header ---------- */
+    .top {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: max(14px, env(safe-area-inset-top)) 18px 0; pointer-events: none;
+    }
+    .top > * { pointer-events: auto; }
+    .title-wrap { display: grid; gap: 8px; }
+    .title-wrap .label { transform: rotate(-2deg); font-size: 22px; height: 40px; }
+    .hint { font-size: 13px; opacity: .65; max-width: 300px; margin-left: 4px; }
+    .back { font-size: 12px; color: inherit; opacity: .55; text-decoration: none; margin-left: 4px; }
+    .back:hover { opacity: 1; }
+    .box-btn {
+      font: 600 14px/1 -apple-system, system-ui, sans-serif; color: #fff;
+      background: #24262b; border: 0; border-radius: 12px; padding: 11px 14px;
+      box-shadow: 0 3px 0 #0c0d0f, 0 8px 18px rgba(80,50,0,.25); cursor: pointer;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .box-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #0c0d0f; }
+    .box-btn .count {
+      background: var(--accent); border-radius: 99px; min-width: 22px; height: 22px;
+      display: grid; place-items: center; padding: 0 6px; font-size: 12px;
+    }
+    .box-btn.bump .count { animation: bump .4s ease; }
+    @keyframes bump { 40% { transform: scale(1.5); } }
+
+    /* ---------- labels ---------- */
+    .label {
+      --bg: #f6f5ef; --fg: #141414;
+      display: inline-flex; align-items: center; height: 36px; padding: 0 16px;
+      white-space: pre; font-size: 19px; line-height: 1; color: var(--fg);
+      background: var(--bg); border-radius: 2px; position: relative;
+      box-shadow: 0 1px 1px rgba(0,0,0,.25), 0 2px 5px rgba(60,40,0,.18);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 700;
+    }
+    .label::after { /* laminate sheen */
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0) 38%, rgba(0,0,0,0) 70%, rgba(0,0,0,.07));
+    }
+    .label.font-serif { font-family: "Times New Roman", Times, Georgia, serif; font-weight: 700; }
+    .label.font-mono  { font-family: "Courier New", Courier, monospace; font-weight: 700; }
+    .label.font-round { font-family: ui-rounded, "Arial Rounded MT Bold", "SF Pro Rounded", sans-serif; font-weight: 700; }
+    .label.font-dymo  { font-family: Oswald, "Arial Narrow", sans-serif; font-weight: 600; letter-spacing: .06em; }
+    .label.font-thin  { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 300; }
+    .label.framed { outline: 1.5px solid var(--fg); outline-offset: -5px; }
+    .label.emb.framed { outline-color: rgba(255,255,255,.85); }
+    .label.clear {
+      background: rgba(255,255,255,.22);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.45) inset, 0 1px 2px rgba(60,40,0,.2);
+    }
+    /* classic embossed tape: colored plastic, raised white letters */
+    .label.emb {
+      text-transform: uppercase; letter-spacing: .14em; color: rgba(255,255,255,.93);
+      border-radius: 5px; padding: 0 14px; font-size: 18px;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 30%, rgba(0,0,0,0) 72%, rgba(0,0,0,.22)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 3px);
+      text-shadow: 0 1px 0 rgba(0,0,0,.45), 0 -1px 0 rgba(255,255,255,.35);
+    }
+    .label.emb::after { background: none; }
+    .label.emb span { display: inline-block; white-space: pre; }
+
+    /* ---------- the yellow board ---------- */
+    #board { position: fixed; inset: 0; z-index: 5; }
+    #board .label { position: absolute; transform: rotate(var(--r, 0deg)); cursor: grab; touch-action: none;
+      transition: transform .18s cubic-bezier(.3,1.6,.5,1), box-shadow .18s; }
+    #board .label.lifted {
+      z-index: 40; cursor: grabbing; transition: box-shadow .15s, transform .15s;
+      transform: rotate(calc(var(--r, 0deg) * .3)) scale(1.07);
+      box-shadow: 0 2px 3px rgba(0,0,0,.2), 0 18px 30px rgba(60,40,0,.3);
+    }
+    #board .label.lifted.emb, #board .label.lifted { } /* keep */
+
+    /* printing tape clip (left of the slot) */
+    #feed { position: fixed; z-index: 15; overflow: hidden; pointer-events: none; }
+    #feed .label { position: absolute; right: 0; top: 50%; }
+
+    /* trash / peel zone */
+    #trash {
+      position: fixed; z-index: 35; left: 18px; bottom: 18px; width: 92px; height: 92px; border-radius: 50%;
+      display: grid; place-items: center; text-align: center; font: 600 12px/1.2 -apple-system, system-ui, sans-serif;
+      background: rgba(36,38,43,.12); border: 2px dashed rgba(36,38,43,.45);
+      opacity: 0; transform: scale(.7); transition: .2s; pointer-events: none;
+    }
+    #trash.show { opacity: 1; transform: scale(1); }
+    #trash.hot { background: rgba(214,40,40,.85); color: #fff; border-color: transparent; transform: scale(1.12); }
+
+    /* ---------- the machine: white desktop P-touch body, tape exits on the left ---------- */
+    .machine-wrap {
+      position: fixed; z-index: 20; left: 50%; bottom: max(18px, env(safe-area-inset-bottom));
+      transform-origin: 50% 100%; transform: translateX(-50%) scale(var(--s, 1));
+    }
+    .machine {
+      position: relative; width: 560px; padding: 18px 26px 26px;
+      border-radius: 44px 52px 58px 58px;
+      background: linear-gradient(180deg, #f8f9fa 0%, #eef0f2 45%, #e1e4e8 100%);
+      box-shadow:
+        inset 0 2px 0 #fff, inset 0 -7px 0 rgba(0,0,0,.07), inset 0 0 0 1px rgba(0,0,0,.09),
+        0 34px 50px -14px rgba(90,55,0,.5), 0 10px 16px rgba(90,55,0,.22);
+    }
+    /* left/top (not transform) so the hump can stay tucked behind the body */
+    .machine.printing { animation: hum .09s linear infinite; }
+    @keyframes hum { 0%,100% { left: 0; top: 0; } 25% { left: .6px; top: -.4px; } 75% { left: -.6px; top: .4px; } }
+
+    .hump { /* raised tape compartment along the back */
+      position: absolute; z-index: -1; top: -22px; left: 96px; right: 0; height: 90px;
+      border-radius: 26px 52px 0 0;
+      background: linear-gradient(180deg, #fbfcfc, #eceef1 40%);
+      box-shadow: inset 0 2px 0 #fff, 0 0 0 1px rgba(0,0,0,.09), 0 -3px 8px rgba(90,55,0,.08);
+    }
+    .cutter { /* grey cutter lever on top */
+      position: absolute; top: -27px; left: 160px; width: 48px; height: 20px; border: 0; border-radius: 4px 4px 2px 2px;
+      background: linear-gradient(180deg, #d7dade, #b6bbc1); cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.12), 0 1px 0 rgba(0,0,0,.18);
+      transition: transform .08s;
+    }
+    .cutter.down { transform: translateY(4px); background: linear-gradient(180deg, #c7cbd0, #a7acb3); }
+
+    .slot { /* tape exit, left side */
+      position: absolute; left: -6px; top: 78px; width: 14px; height: 48px; border-radius: 5px;
+      background: linear-gradient(90deg, #b5bac0, #e6e8eb 50%, #c3c7cc);
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    }
+    .slot::after { content: ""; position: absolute; left: 3px; right: 7px; top: 5px; bottom: 5px; background: #2a2c30; border-radius: 2px; }
+
+    .lid {
+      display: grid; place-items: center; padding: 24px 0 26px; margin: 0 -8px;
+      border-radius: 34px 42px 16px 16px;
+      background: linear-gradient(180deg, #fafbfb, #eff1f3);
+      box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(0,0,0,.06), 0 3px 0 rgba(0,0,0,.045);
+    }
+    .bezel {
+      padding: 6px; border-radius: 7px; background: linear-gradient(180deg, #8d9299, #70757d);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.45), 0 1px 0 #fff;
+    }
+    .lcd {
+      width: 236px; height: 82px; padding: 4px 7px 3px; border-radius: 2px; position: relative; overflow: hidden;
+      background: linear-gradient(180deg, #cfd2cb, #bec2ba);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.32);
+      font-family: VT323, "Courier New", monospace; color: #22251f;
+    }
+    .lcd::after { /* dot-matrix grain */
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 1px, transparent 1px 2px),
+                  repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, transparent 1px 2px);
+    }
+    .lcd .l1 { font-size: 15px; line-height: 17px; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+    .lcd .l1 .len { margin-left: auto; }
+    .lcd .chip { background: #22251f; color: #c9ccc5; padding: 0 3px; border-radius: 1px; }
+    .lcd .l2 { display: flex; align-items: center; height: 40px; border-bottom: 1px solid rgba(34,37,31,.22); }
+    .lcd .gut { font-size: 14px; width: 15px; margin-right: 6px; padding-right: 3px; border-right: 1px solid rgba(34,37,31,.55); line-height: 26px; text-align: center; }
+    .lcd .txt { flex: 1; font-size: 30px; line-height: 40px; white-space: pre; overflow: hidden; }
+    .lcd .l3 { font-size: 14px; line-height: 19px; opacity: .8; white-space: nowrap; overflow: hidden; }
+    .lcd .cursor { display: inline-block; width: 2px; height: 24px; margin: 0 1px; background: currentColor; vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .lcd .ph { opacity: .35; }
+    .lcd .marquee { display: inline-block; animation: marquee var(--d) linear forwards; }
+    @keyframes marquee { from { transform: translateX(var(--from)); } to { transform: translateX(var(--to)); } }
+    .lcd.off { background: linear-gradient(180deg, #c2c5be, #b3b7af); }
+    .lcd.off > * { visibility: hidden; }
+
+    .keys { display: grid; gap: 7px; margin-top: 16px; }
+    .krow { display: flex; gap: 5px; align-items: center; }
+    .krow.r-fn { padding-top: 12px; margin-bottom: 3px; }
+    .krow.r-bottom { justify-content: center; }
+    .krow .spacer { flex: 1; }
+    .mid { display: flex; align-items: center; gap: 10px; }
+    .mid > .keys { margin: 0; }
+    .key {
+      position: relative; width: 30px; height: 27px; border: 0; border-radius: 7px; padding: 0; cursor: pointer;
+      display: grid; place-items: center;
+      font: 500 12px/1 -apple-system, system-ui, "Helvetica Neue", sans-serif; color: #4f555e;
+      background: linear-gradient(180deg, #fff, #eef0f2);
+      box-shadow: 0 0 0 1px #c3c7cc, 0 2px 0 #b5b9bf, 0 3px 6px rgba(0,0,0,.12);
+      transition: transform .05s, box-shadow .05s;
+    }
+    .key.down, .key:active { transform: translateY(1.5px); box-shadow: 0 0 0 1px #c3c7cc, 0 .5px 0 #b5b9bf, 0 1px 2px rgba(0,0,0,.12); }
+    .key .sub { position: absolute; top: 3px; right: 4px; font-size: 7.5px; opacity: .7; }
+    .key.w { width: auto; min-width: 34px; padding: 0 8px; font-size: 9.5px; }
+    .key.round { width: 27px; border-radius: 50%; }
+    .key.dark {
+      width: 58px; height: 23px; border-radius: 6px; color: #fff; font-size: 9.5px; line-height: 1.05;
+      background: linear-gradient(180deg, #a5aab1, #8f949b);
+      box-shadow: 0 0 0 1px #81868d, 0 2px 0 #6e737a, 0 3px 6px rgba(0,0,0,.15);
+    }
+    .key.dark.down, .key.dark:active { box-shadow: 0 0 0 1px #81868d, 0 .5px 0 #6e737a; }
+    .key.dark.two { font-size: 8.5px; }
+    .key.bs {
+      width: 36px; color: #fff; font-size: 13px;
+      background: linear-gradient(180deg, #7a7f87, #62676f);
+      box-shadow: 0 0 0 1px #555a61, 0 2px 0 #44484e, 0 3px 6px rgba(0,0,0,.15);
+    }
+    .key.print { width: 54px; height: 30px; font-size: 11px; font-weight: 600; }
+    .key.space { width: 104px; font-size: 9.5px; }
+    .key.enter { min-width: 66px; }
+    .key[data-cap]::before {
+      content: attr(data-cap); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+      font-size: 7.5px; font-weight: 500; color: #80868e; white-space: nowrap;
+    }
+    .key.on::after { /* little status LED */
+      content: ""; position: absolute; top: 4px; left: 4px; width: 4px; height: 4px; border-radius: 50%;
+      background: #2fbf6a; box-shadow: 0 0 4px #2fbf6a;
+    }
+    .cross { display: grid; grid-template-columns: repeat(3, 27px); grid-template-rows: repeat(3, 20px); gap: 2px; margin-left: auto; margin-right: 6px; }
+    .cross .key { width: 27px; height: 20px; border-radius: 6px; color: #6b7179; }
+    .cross .up { grid-area: 1 / 2; } .cross .left { grid-area: 2 / 1; }
+    .cross .right { grid-area: 2 / 3; } .cross .dn { grid-area: 3 / 2; }
+    .cross .hub { grid-area: 2 / 2; border-radius: 50%; margin: 3px 6px; background: #e3e6e9; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); }
+
+    /* ---------- tape box drawer ---------- */
+    #drawer {
+      position: fixed; z-index: 50; top: 0; right: 0; bottom: 0; width: min(400px, 100vw);
+      background: #fffaf0; box-shadow: -20px 0 40px rgba(60,40,0,.25);
+      transform: translateX(105%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+      display: flex; flex-direction: column;
+      -webkit-user-select: text; user-select: text;
+    }
+    #drawer.open { transform: none; }
+    .d-head { padding: max(18px, env(safe-area-inset-top)) 20px 12px; border-bottom: 1px solid #eadfc8; }
+    .d-head h2 { margin: 0; font-size: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .d-head p { margin: 4px 0 10px; font-size: 13px; opacity: .65; }
+    .x { border: 0; background: none; font-size: 26px; cursor: pointer; line-height: 1; color: inherit; }
+    .tabs { display: flex; gap: 6px; }
+    .tab { border: 1px solid #d9cdb2; background: none; border-radius: 99px; padding: 5px 11px; font-size: 13px; cursor: pointer; color: inherit; }
+    .tab.on { background: #24262b; color: #fff; border-color: #24262b; }
+    #list { list-style: none; margin: 0; padding: 8px 20px 20px; overflow: auto; flex: 1; }
+    #list li { padding: 14px 0; border-bottom: 1px solid #efe6d3; }
+    #list li.done .label { opacity: .45; }
+    #list .label { max-width: 100%; overflow: hidden; }
+    .meta { font-size: 12px; opacity: .6; margin: 8px 0 6px; }
+    .acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .acts button, .d-foot button {
+      border: 1px solid #d9cdb2; background: #fff; border-radius: 8px; padding: 5px 10px; font-size: 13px; cursor: pointer; color: inherit;
+    }
+    .acts button.go { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .acts label { font-size: 13px; display: flex; gap: 5px; align-items: center; margin-left: auto; cursor: pointer; }
+    .empty { padding: 30px 0; text-align: center; opacity: .55; font-size: 14px; }
+    .d-foot { padding: 12px 20px max(16px, env(safe-area-inset-bottom)); border-top: 1px solid #eadfc8; display: flex; gap: 8px; flex-wrap: wrap; }
+    #scrim { position: fixed; inset: 0; z-index: 45; background: rgba(40,25,0,.25); opacity: 0; pointer-events: none; transition: opacity .3s; }
+    #scrim.show { opacity: 1; pointer-events: auto; }
+
+    .toast {
+      position: fixed; z-index: 60; left: 50%; top: 18px; transform: translate(-50%, -80px);
+      background: #24262b; color: #fff; padding: 9px 14px; border-radius: 10px; font-size: 14px; transition: transform .25s;
+    }
+    .toast.show { transform: translate(-50%, 0); }
+
+    #feed .holder { position: absolute; left: 50%; bottom: 0; }
+    #feed .holder .label { right: auto; top: 0; left: 0; transform-origin: 0 0; }
+    @media (max-width: 640px) {
+      /* phones: tape comes out of the top, like a handheld */
+      .slot { left: 250px; top: -30px; width: 76px; height: 16px; background: linear-gradient(180deg, #b5bac0, #e6e8eb 50%, #c3c7cc); }
+      .slot::after { left: 6px; right: 6px; top: 3px; bottom: 7px; }
+      .hint { display: none; }
+      .title-wrap .label { font-size: 18px; height: 34px; }
+      .label { font-size: 17px; height: 32px; padding: 0 13px; }
+      .label.emb { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="board" aria-label="Label wall"></div>
+  <div id="feed"></div>
+
+  <header class="top">
+    <div class="title-wrap">
+      <a class="back" href="../../../index.html">← 30 days</a>
+      <div id="titleLabel"></div>
+      <div class="hint">Type on the machine (or your keyboard), hit <b>PRINT</b>, then drag labels anywhere on the wall to stick them. Double-click a stuck label to load it back in.</div>
+    </div>
+    <button class="box-btn" id="boxBtn">Tape box <span class="count" id="boxCount">0</span></button>
+  </header>
+
+  <div class="machine-wrap" id="machineWrap">
+    <div class="machine" id="machine">
+      <div class="hump" aria-hidden="true"></div>
+      <button class="cutter" id="cutter" title="Cutter lever" aria-label="Cut"></button>
+      <div class="slot" aria-hidden="true"></div>
+      <div class="lid">
+        <div class="bezel">
+          <div class="lcd" id="lcd">
+            <div class="l1"><span id="lcdA"></span><span class="len" id="lcdB"></span></div>
+            <div class="l2"><span class="gut">1)</span><span class="txt" id="lcdText"></span></div>
+            <div class="l3" id="lcdC"></div>
+          </div>
+        </div>
+      </div>
+      <div class="keys" id="keys"></div>
+    </div>
+  </div>
+
+  <div id="trash">peel<br>off</div>
+
+  <div id="scrim"></div>
+  <aside id="drawer" aria-label="Tape box">
+    <div class="d-head">
+      <h2>Tape box <button class="x" id="closeBox" aria-label="Close">×</button></h2>
+      <p>Every label you print or save lands here, so you can make the real ones once you have tape again.</p>
+      <div class="tabs">
+        <button class="tab on" data-f="todo">To print IRL</button>
+        <button class="tab" data-f="done">Printed IRL</button>
+        <button class="tab" data-f="all">All</button>
+      </div>
+    </div>
+    <ul id="list"></ul>
+    <div class="d-foot">
+      <button id="copyList">Copy “to print” list</button>
+      <button id="clearBoard">Peel everything off the wall</button>
+    </div>
+  </aside>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ---------- data ----------
+  const TAPES = [
+    { id: 'white',     name: 'WHITE',     bg: '#f6f5ef', fg: '#141414' },
+    { id: 'black',     name: 'BLACK',     bg: '#17181b', fg: '#f3f1ea' },
+    { id: 'clear',     name: 'CLEAR',     bg: 'transparent', fg: '#151515', swatch: '#e9eef2' },
+    { id: 'pink',      name: 'PINK',      bg: '#f7b7cd', fg: '#141414' },
+    { id: 'mint',      name: 'MINT',      bg: '#bfe8d2', fg: '#141414' },
+    { id: 'silver',    name: 'SILVER',    bg: '#c9ccd1', fg: '#141414' },
+    { id: 'emb-red',   name: 'EMB RED',   bg: '#c51f2a', emb: true },
+    { id: 'emb-black', name: 'EMB BLACK', bg: '#1b1b1d', emb: true },
+    { id: 'emb-blue',  name: 'EMB BLUE',  bg: '#1d4ea6', emb: true },
+    { id: 'emb-green', name: 'EMB GREEN', bg: '#1e7a3c', emb: true },
+  ];
+  const FONTS = [
+    { id: 'sans', name: 'SANS' }, { id: 'dymo', name: 'TALL' }, { id: 'serif', name: 'SERIF' },
+    { id: 'mono', name: 'TYPE' }, { id: 'round', name: 'ROUND' }, { id: 'thin', name: 'THIN' },
+  ];
+  const MAX = 40;
+  const K = { saved: 'labelmaker.saved', board: 'labelmaker.board', prefs: 'labelmaker.prefs' };
+  const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+  const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const tapeOf = id => TAPES.find(t => t.id === id) || TAPES[0];
+  const fontOf = id => FONTS.find(f => f.id === id) || FONTS[0];
+  const mm = text => Math.round(text.length * 4.2 + 18);
+
+  const prefs = Object.assign({ tape: 'white', font: 'sans', caps: true, frame: false, muted: false }, load(K.prefs, {}));
+  let saved = load(K.saved, []);
+  let board = load(K.board, []);
+  let text = '';
+  let printing = false;
+  let filter = 'todo';
+
+  const $ = id => document.getElementById(id);
+  const machine = $('machine'), wrap = $('machineWrap'), boardEl = $('board'), feed = $('feed');
+
+  // ---------- sound (Web Audio, no files) ----------
+  let ac;
+  function ctx() {
+    if (prefs.muted) return null;
+    try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch { return null; }
+    return ac;
+  }
+  function noise(dur, freq, q, gain, delay = 0) {
+    const a = ctx(); if (!a) return;
+    const n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 2;
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q; g.gain.value = gain;
+    src.connect(f).connect(g).connect(a.destination); src.start(a.currentTime + delay);
+  }
+  function tone(freq, dur, gain, type = 'square', delay = 0) {
+    const a = ctx(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + delay;
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .02);
+  }
+  const sfx = {
+    key: () => noise(.035, 2600, 1.2, .5),
+    step: () => { tone(95 + Math.random() * 20, .07, .05, 'sawtooth'); noise(.05, 1200, 2, .25); },
+    cut: () => { noise(.05, 5200, .8, .9); noise(.05, 1800, 1, .6, .03); },
+    stick: () => { noise(.09, 380, .9, 1.1); },
+    peel: () => { noise(.22, 3200, .5, .5); },
+    beep: () => { tone(1320, .08, .06); tone(1320, .08, .06, 'square', .12); },
+    ok: () => { tone(1568, .07, .05); tone(2093, .09, .05, 'square', .08); },
+  };
+
+  // ---------- label rendering ----------
+  function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; }
+  function makeLabel(item) {
+    const t = tapeOf(item.tape), el = document.createElement('div');
+    el.className = 'label font-' + fontOf(item.font).id + (t.emb ? ' emb' : '') + (t.id === 'clear' ? ' clear' : '') + (item.frame ? ' framed' : '');
+    el.style.setProperty('--bg', t.bg);
+    if (t.fg) el.style.setProperty('--fg', t.fg);
+    if (t.emb) {
+      // embossed letters never sit perfectly straight
+      let seed = hash((item.id || '') + item.text);
+      for (const ch of item.text.toUpperCase()) {
+        seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0;
+        const s = document.createElement('span'); s.textContent = ch;
+        const dy = ((seed & 255) / 255 - .5) * 2.2, rot = (((seed >>> 8) & 255) / 255 - .5) * 5;
+        s.style.transform = `translateY(${dy.toFixed(2)}px) rotate(${rot.toFixed(2)}deg)`;
+        el.appendChild(s);
+      }
+    } else el.textContent = item.text;
+    return el;
+  }
+
+  // ---------- keyboard on the machine (desktop P-touch layout) ----------
+  const SHIFTED = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':"'", '7':'&', '8':'*', '9':'(', '0':')',
+                    '-':'_', '=':'"', ';':':', ',':'<', '.':'>', '/':'?' };
+  const UNSHIFT = Object.fromEntries(Object.entries(SHIFTED).map(([a, b]) => [b, a]));
+  const SYMBOLS = ['★', '♥', '✓', '☺', '✿', '♪', '☀', '☂', '✈', '→', '☆'];
+  const ACCENTS = ['aàáâäå', 'eèéêë', 'iìíîï', 'oòóôöø', 'uùúûü', 'nñ', 'cç', 'yýÿ',
+                   'AÀÁÂÄÅ', 'EÈÉÊË', 'IÌÍÎÏ', 'OÒÓÔÖØ', 'UÙÚÛÜ', 'NÑ', 'CÇ', 'YÝ'];
+  const FONT_CODE = { sans: 'HEL', dymo: 'NAR', serif: 'TMS', mono: 'COU', round: 'RND', thin: 'LGT' };
+  const svg = (d, w = 12) => `<svg width="${w}" height="${w}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const tri = rot => `<svg width="8" height="8" viewBox="0 0 10 10" style="transform:rotate(${rot}deg)"><path d="M5 1.5L9 8.5H1z" fill="currentColor"/></svg>`;
+  const D = (k, t, c = '', cap) => ({ k, t: t ?? k, c, cap });
+  const chars = s => [...s].map(ch => D(ch));
+  const LAYOUT = [
+    [D('power', svg('<path d="M8 2v6"/><path d="M4.6 4.6a5 5 0 1 0 6.8 0"/>'), 'round'), D('menu', 'Menu', 'w'),
+     D('font', 'Font', 'dark'), D('label', 'Label', 'dark'), D('frame', 'Frame', 'dark'), D('symbol', 'Symbol', 'dark'),
+     D('auto', 'Auto<br>Format', 'dark two'), null,
+     D('preview', svg('<circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/>', 13), '', 'Feed'),
+     D('print', 'Print', 'print', 'Print Options')],
+    [...chars('1234567890-='), D('clear', 'Clear', 'w'), D('del', '⌫', 'bs')],
+    'MID',
+    [D('shift', '⇧ Shift', 'w'), ...chars('ZXCVBNM,./'), D('esc', 'Esc'), D('ok', 'OK')],
+    [D('file', 'File', 'w'), D('barcode', 'Barcode', 'w'), D(' ', 'Space', 'space'), D('accent', 'Accent', 'w'), D('enter', 'Enter ↵', 'w enter')],
+  ];
+  const MID_ROWS = [[D('tab', 'Tab', 'w'), ...chars('QWERTYUIOP')], [D('caps', 'Caps', 'w'), ...chars('ASDFGHJKL;')]];
+  const CROSS = [D('up', tri(0), 'up'), D('left', tri(-90), 'left'), D('right', tri(90), 'right'), D('down', tri(180), 'dn')];
+
+  const keyEls = {};
+  function makeKey(d) {
+    const b = document.createElement('button');
+    b.className = 'key' + (d.c ? ' ' + d.c : '');
+    b.innerHTML = d.t;
+    if (SHIFTED[d.k]) { const s = document.createElement('span'); s.className = 'sub'; s.textContent = SHIFTED[d.k]; b.append(s); }
+    if (d.cap) b.dataset.cap = d.cap;
+    b.dataset.k = d.k; b.tabIndex = -1;
+    b.setAttribute('aria-label', d.k === ' ' ? 'space' : d.k);
+    b.addEventListener('pointerdown', e => { e.preventDefault(); press(d.k, true); });
+    keyEls[d.k.toUpperCase()] = b;
+    return b;
+  }
+  function rowEl(defs) {
+    const r = document.createElement('div'); r.className = 'krow';
+    defs.forEach(d => { if (d) r.append(makeKey(d)); else { const s = document.createElement('span'); s.className = 'spacer'; r.append(s); } });
+    return r;
+  }
+  LAYOUT.forEach((row, i) => {
+    if (row === 'MID') {
+      const mid = document.createElement('div'); mid.className = 'mid';
+      const left = document.createElement('div'); left.className = 'keys';
+      MID_ROWS.forEach(r => left.append(rowEl(r)));
+      const cross = document.createElement('div'); cross.className = 'cross';
+      CROSS.forEach(d => cross.append(makeKey(d)));
+      const hub = document.createElement('span'); hub.className = 'hub'; cross.append(hub);
+      mid.append(left, cross); $('keys').append(mid);
+      return;
+    }
+    const r = rowEl(row);
+    if (i === 0) r.classList.add('r-fn');
+    if (i === LAYOUT.length - 1) r.classList.add('r-bottom');
+    $('keys').append(r);
+  });
+  function flash(k) {
+    const b = keyEls[k.toUpperCase()] || keyEls[UNSHIFT[k]]; if (!b) return;
+    b.classList.add('down'); setTimeout(() => b.classList.remove('down'), 110);
+  }
+
+  let cur = 0, shiftOnce = false, power = true, lastKey = '', symIdx = 0;
+  function insert(s) {
+    if (text.length + s.length > MAX) { sfx.beep(); lcdMsg('TEXT FULL', `MAX ${MAX}`); return; }
+    text = text.slice(0, cur) + s + text.slice(cur); cur += s.length;
+  }
+  function replaceBeforeCursor(ch) { text = text.slice(0, cur - 1) + ch + text.slice(cur); }
+  function cycle(list, id, d) { const i = list.findIndex(x => x.id === id); return list[(i + d + list.length) % list.length].id; }
+  function setShift(on) { shiftOnce = on; keyEls.SHIFT.classList.toggle('on', on); }
+
+  function press(k, fromScreen) {
+    flash(k); sfx.key();
+    const prev = lastKey; lastKey = k;
+    if (k === 'power') return togglePower();
+    if (!power) return;
+    if (printing && !['caps', 'label', 'up', 'down', 'font', 'frame', 'menu'].includes(k)) return;
+    if (msgTimer && !printing) { clearTimeout(msgTimer); msgTimer = null; }
+    switch (k) {
+      case 'del': if (cur > 0) { text = text.slice(0, cur - 1) + text.slice(cur); cur--; } break;
+      case 'clear': case 'esc': text = ''; cur = 0; break;
+      case 'left': cur = Math.max(0, cur - 1); break;
+      case 'right': cur = Math.min(text.length, cur + 1); break;
+      case 'home': cur = 0; break;
+      case 'end': cur = text.length; break;
+      case 'label': case 'up': prefs.tape = cycle(TAPES, prefs.tape, 1); savePrefs(); break;
+      case 'down': prefs.tape = cycle(TAPES, prefs.tape, -1); savePrefs(); break;
+      case 'font': prefs.font = cycle(FONTS, prefs.font, 1); savePrefs(); break;
+      case 'frame': prefs.frame = !prefs.frame; savePrefs(); break;
+      case 'caps': prefs.caps = !prefs.caps; savePrefs(); break;
+      case 'shift': setShift(!shiftOnce); break;
+      case 'menu':
+        prefs.muted = !prefs.muted; savePrefs(); if (!prefs.muted) sfx.ok();
+        return lcdMsg(prefs.muted ? 'SOUND OFF' : 'SOUND ON', 'MENU');
+      case 'symbol':
+        if (prev === 'symbol' && cur > 0 && text[cur - 1] === SYMBOLS[symIdx]) { symIdx = (symIdx + 1) % SYMBOLS.length; replaceBeforeCursor(SYMBOLS[symIdx]); }
+        else { symIdx = 0; insert(SYMBOLS[0]); }
+        break;
+      case 'accent': {
+        const ch = text[cur - 1], set = ch && ACCENTS.find(s => s.includes(ch));
+        if (!set) { sfx.beep(); return lcdMsg('TYPE A LETTER', 'ACCENT'); }
+        replaceBeforeCursor(set[(set.indexOf(ch) + 1) % set.length]);
+        break;
+      }
+      case 'auto': return autoFormat();
+      case 'barcode': sfx.beep(); return lcdMsg('NO BARCODES', 'BARCODE');
+      case 'preview': return preview();
+      case 'file': return saveCurrent();
+      case 'print': case 'ok': case 'enter': return printCurrent();
+      case 'tab': insert(' '); break;
+      default: {
+        let ch = k;
+        if (fromScreen) {
+          if (shiftOnce && SHIFTED[ch]) ch = SHIFTED[ch];
+          else if (/[A-Z]/.test(ch) && prefs.caps === shiftOnce) ch = ch.toLowerCase();
+        }
+        if (shiftOnce) setShift(false);
+        insert(ch);
+      }
+    }
+    renderLCD();
+  }
+  const KEYMAP = { Backspace: 'del', Enter: 'print', Escape: 'esc', ArrowLeft: 'left', ArrowRight: 'right',
+                   ArrowUp: 'up', ArrowDown: 'down', Home: 'home', End: 'end', Tab: 'tab' };
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if ($('drawer').classList.contains('open')) { if (e.key === 'Escape') openBox(false); return; }
+    if (KEYMAP[e.key]) { e.preventDefault(); press(KEYMAP[e.key]); }
+    else if (e.key.length === 1) { e.preventDefault(); press(e.key); }
+  });
+
+  function togglePower() {
+    if (printing) return;
+    power = !power;
+    $('lcd').classList.toggle('off', !power);
+    if (power) { sfx.ok(); lcdMsg('HELLO!', '', 700); }
+  }
+  function autoFormat() {
+    const pick = list => list[Math.floor(Math.random() * list.length)].id;
+    prefs.tape = pick(TAPES); prefs.font = pick(FONTS); prefs.frame = Math.random() < .4; savePrefs();
+    sfx.ok(); lcdMsg('AUTO FORMAT', `${tapeOf(prefs.tape).name} ${fontOf(prefs.font).name}`);
+  }
+  function preview() {
+    if (!text) { sfx.beep(); return lcdMsg('NOTHING YET', 'PREVIEW'); }
+    clearTimeout(msgTimer);
+    const span = document.createElement('span'); span.className = 'marquee';
+    span.textContent = tapeOf(prefs.tape).emb ? text.toUpperCase() : text;
+    $('lcdA').innerHTML = '<span class="chip">PREVIEW</span>'; $('lcdB').textContent = inches(text); $('lcdC').textContent = '';
+    $('lcdText').replaceChildren(span);
+    const box = $('lcdText').clientWidth, w = span.offsetWidth, dur = Math.max(1600, (w + box) * 11);
+    span.style.setProperty('--from', box + 'px'); span.style.setProperty('--to', -w + 'px'); span.style.setProperty('--d', dur + 'ms');
+    msgTimer = setTimeout(() => { msgTimer = null; renderLCD(); }, dur);
+  }
+
+  // ---------- LCD ----------
+  let msgTimer;
+  const inches = s => (mm(s) / 25.4).toFixed(1) + '"';
+  function savePrefs() { store(K.prefs, prefs); paintMachine(); }
+  function paintMachine() {
+    keyEls.CAPS.classList.toggle('on', prefs.caps);
+    keyEls.FRAME.classList.toggle('on', !!prefs.frame);
+  }
+  function renderLCD() {
+    if (msgTimer) return;
+    const t = tapeOf(prefs.tape);
+    $('lcdA').innerHTML = (prefs.caps ? '<span class="chip">Caps</span>' : '') + `<span>${FONT_CODE[fontOf(prefs.font).id]}</span>` + (shiftOnce ? '<span>⇧</span>' : '');
+    $('lcdB').textContent = inches(text);
+    $('lcdC').textContent = `${t.name} TAPE${prefs.frame ? ' · FRAME' : ''}  ${text.length}/${MAX}`;
+    const shown = t.emb ? text.toUpperCase() : text;
+    const W = 15, start = Math.max(0, cur - (W - 1));
+    const c = document.createElement('span'); c.className = 'cursor';
+    const out = $('lcdText');
+    if (!text) { const p = document.createElement('span'); p.className = 'ph'; p.textContent = 'TYPE A LABEL'; out.replaceChildren(c, p); }
+    else out.replaceChildren(shown.slice(start, cur), c, shown.slice(cur, start + W));
+  }
+  function lcdMsg(a, b = '', ms = 900) {
+    clearTimeout(msgTimer); msgTimer = null;
+    $('lcdA').textContent = b; $('lcdB').textContent = ''; $('lcdC').textContent = ''; $('lcdText').textContent = a;
+    if (ms) msgTimer = setTimeout(() => { msgTimer = null; renderLCD(); }, ms);
+    else msgTimer = 1;
+  }
+
+  // ---------- tape box (saved labels) ----------
+  function remember(item) {
+    const hit = saved.find(s => s.text === item.text && s.tape === item.tape && s.font === item.font && !!s.frame === !!item.frame);
+    if (hit) { hit.ts = Date.now(); saved = [hit, ...saved.filter(s => s !== hit)]; }
+    else saved.unshift({ id: uid(), text: item.text, tape: item.tape, font: item.font, frame: !!item.frame, irl: false, ts: Date.now() });
+    store(K.saved, saved); renderBox();
+    $('boxBtn').classList.remove('bump'); void $('boxBtn').offsetWidth; $('boxBtn').classList.add('bump');
+  }
+  function current() { return { text: text.trim() ? text : '', tape: prefs.tape, font: prefs.font, frame: !!prefs.frame }; }
+  function saveCurrent() {
+    const it = current(); if (!it.text) { sfx.beep(); lcdMsg('NOTHING TO SAVE'); return; }
+    remember(it); sfx.ok(); lcdMsg('SAVED TO BOX', 'TAPE BOX ✓');
+  }
+  function renderBox() {
+    $('boxCount').textContent = saved.filter(s => !s.irl).length;
+    const list = $('list'); list.innerHTML = '';
+    const items = saved.filter(s => filter === 'all' || (filter === 'done' ? s.irl : !s.irl));
+    if (!items.length) {
+      const li = document.createElement('li'); li.className = 'empty';
+      li.textContent = filter === 'done' ? 'Nothing marked as printed yet.' : 'Empty. Type something and hit PRINT or SAVE.';
+      list.append(li); return;
+    }
+    items.forEach(s => {
+      const li = document.createElement('li'); if (s.irl) li.className = 'done';
+      li.append(makeLabel(s));
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = `${tapeOf(s.tape).name.toLowerCase()} tape · ${fontOf(s.font).name.toLowerCase()}${s.frame ? ' · frame' : ''} · ≈${mm(s.text)} mm`;
+      const acts = document.createElement('div'); acts.className = 'acts';
+      const btn = (txt, cls, fn) => { const b = document.createElement('button'); b.textContent = txt; if (cls) b.className = cls; b.onclick = fn; acts.append(b); };
+      btn('Print', 'go', () => { openBox(false); loadItem(s); setTimeout(printCurrent, 350); });
+      btn('Edit', '', () => { openBox(false); loadItem(s); });
+      btn('Delete', '', () => { saved = saved.filter(x => x !== s); store(K.saved, saved); renderBox(); });
+      const lab = document.createElement('label'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = s.irl;
+      cb.onchange = () => { s.irl = cb.checked; store(K.saved, saved); renderBox(); };
+      lab.append(cb, 'printed IRL'); acts.append(lab);
+      li.append(meta, acts); list.append(li);
+    });
+  }
+  function loadItem(s) { text = s.text; cur = text.length; prefs.tape = s.tape; prefs.font = s.font; prefs.frame = !!s.frame; savePrefs(); renderLCD(); }
+  function openBox(on) { $('drawer').classList.toggle('open', on); $('scrim').classList.toggle('show', on); }
+  $('boxBtn').onclick = () => openBox(true);
+  $('closeBox').onclick = $('scrim').onclick = () => openBox(false);
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    filter = t.dataset.f; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); renderBox();
+  });
+  $('copyList').onclick = async () => {
+    const lines = saved.filter(s => !s.irl).map(s => `${s.text}  (${tapeOf(s.tape).name.toLowerCase()}, ${fontOf(s.font).name.toLowerCase()}${s.frame ? ', frame' : ''})`).join('\n');
+    try { await navigator.clipboard.writeText(lines || '(empty)'); toast('Copied ' + saved.filter(s => !s.irl).length + ' labels'); }
+    catch { toast('Could not copy'); }
+  };
+  $('clearBoard').onclick = () => {
+    if (!board.length || !confirm('Peel all ' + board.length + ' labels off the wall?')) return;
+    board = []; store(K.board, board); renderBoard(); sfx.peel();
+  };
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1600); }
+
+  // ---------- printing ----------
+  async function printCurrent() {
+    if (printing) return;
+    const it = current();
+    if (!it.text) { sfx.beep(); lcdMsg('TYPE SOMETHING'); return; }
+    printing = true; machine.classList.add('printing');
+    remember(it);
+
+    const slot = machine.querySelector('.slot').getBoundingClientRect();
+    const up = slot.width > slot.height;   // phone layout: slot on top, tape goes up
+    const item = { id: uid(), ...it };
+    const lab = makeLabel(item);
+    let mover = lab, w, h;
+    if (up) {
+      Object.assign(feed.style, { left: (slot.left + slot.width / 2 - 60) + 'px', top: '0px', width: '120px', height: (slot.top + slot.height * .5) + 'px' });
+      mover = document.createElement('div'); mover.className = 'holder';
+      mover.append(lab); feed.appendChild(mover);
+      w = lab.offsetWidth; h = lab.offsetHeight;
+      Object.assign(mover.style, { width: h + 'px', height: w + 'px', marginLeft: -h / 2 + 'px' });
+      lab.style.transform = `translateY(${w}px) rotate(-90deg)`;
+    } else {
+      const midY = slot.top + slot.height / 2;
+      Object.assign(feed.style, { left: '0px', top: (midY - 40) + 'px', height: '80px', width: (slot.left + slot.width * .45) + 'px' });
+      feed.appendChild(lab);
+      w = lab.offsetWidth; h = lab.offsetHeight;
+    }
+    const at = p => up ? `translateY(${p}px)` : `translate(${p}px, -50%)`;
+    mover.style.transform = at(w);
+
+    const steps = Math.max(8, Math.round(w / 13));
+    const bar = 14;
+    for (let i = 1; i <= steps; i++) {
+      mover.style.transition = 'transform 60ms linear';
+      mover.style.transform = at(w * (1 - i / steps));
+      sfx.step();
+      const filled = Math.round(bar * i / steps);
+      lcdMsg('█'.repeat(filled) + '░'.repeat(bar - filled), 'PRINTING…', 0);
+      await sleep(78 + (i % 3 === 0 ? 20 : 0));
+    }
+    machine.classList.remove('printing');
+    lcdMsg('CUT', 'PRINTING…', 0);
+    await sleep(220);
+
+    // cutter chomps
+    $('cutter').classList.add('down'); sfx.cut();
+    await sleep(130);
+    $('cutter').classList.remove('down');
+
+    // hand the label to the wall, at exactly where it is now
+    const r = mover.getBoundingClientRect();
+    mover.remove();
+    const rot = +(Math.random() * 10 - 5).toFixed(1);
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const pos = up
+      ? clampPos(cx - w / 2 + (Math.random() * 60 - 30), cy - h / 2 - 10, w, h)
+      : clampPos(r.left, r.top + 26 + Math.random() * 30, w, h);
+    Object.assign(item, { x: pos.x / innerWidth, y: pos.y / innerHeight, r: rot });
+    board.push(item); store(K.board, board);
+    const el = addToBoard(item);
+    el.animate([
+      { transform: `translate(${cx - (pos.x + w / 2)}px, ${cy - (pos.y + h / 2)}px) rotate(${up ? -90 : 0}deg)` },
+      { transform: `translate(0, 0) rotate(${rot}deg)` },
+    ], { duration: 420, easing: 'cubic-bezier(.5,0,.6,1.4)' });
+    setTimeout(sfx.stick, 360);
+
+    lcdMsg('DONE ✓', 'DRAG TO STICK', 900);
+    printing = false;
+  }
+
+  // ---------- the wall ----------
+  function clampPos(x, y, w, h) {
+    return { x: Math.min(Math.max(8, x), innerWidth - Math.min(w, innerWidth - 16) - 8), y: Math.min(Math.max(8, y), innerHeight - h - 8) };
+  }
+  function renderBoard() { boardEl.innerHTML = ''; board.forEach(addToBoard); }
+  function addToBoard(item) {
+    const el = makeLabel(item);
+    el.style.left = item.x * innerWidth + 'px';
+    el.style.top = item.y * innerHeight + 'px';
+    el.style.setProperty('--r', (item.r || 0) + 'deg');
+    el.title = 'Drag to move · double-click to load into the machine';
+    boardEl.appendChild(el);
+    makeDraggable(el, item);
+    return el;
+  }
+  const trash = $('trash');
+  function makeDraggable(el, item) {
+    let start = null;
+    el.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      if (el !== boardEl.lastElementChild) boardEl.appendChild(el);   // to the top of the stack
+      el.setPointerCapture(e.pointerId);
+      start = { x: e.clientX, y: e.clientY, l: el.offsetLeft, t: el.offsetTop, moved: false };
+      el.classList.add('lifted');
+      board = board.filter(b => b !== item); board.push(item);
+      noise(.05, 2400, .7, .2);
+    });
+    el.addEventListener('pointermove', e => {
+      if (!start) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!start.moved && Math.hypot(dx, dy) > 3) { start.moved = true; trash.classList.add('show'); }
+      el.style.left = start.l + dx + 'px'; el.style.top = start.t + dy + 'px';
+      const tr = trash.getBoundingClientRect();
+      trash.classList.toggle('hot', e.clientX < tr.right + 10 && e.clientY > tr.top - 10);
+    });
+    const drop = () => {
+      if (!start) return;
+      const hot = trash.classList.contains('hot');
+      trash.classList.remove('show', 'hot');
+      el.classList.remove('lifted');
+      if (hot) {
+        board = board.filter(b => b !== item); store(K.board, board); sfx.peel();
+        el.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(.4) rotate(-30deg)' }], { duration: 220 }).onfinish = () => el.remove();
+      } else if (start.moved) {
+        const p = clampPos(el.offsetLeft, el.offsetTop, el.offsetWidth, el.offsetHeight);
+        item.x = p.x / innerWidth; item.y = p.y / innerHeight;
+        item.r = +(Math.random() * 8 - 4).toFixed(1);
+        el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+        el.style.setProperty('--r', item.r + 'deg');
+        store(K.board, board); sfx.stick();
+      } else store(K.board, board);
+      start = null;
+    };
+    el.addEventListener('pointerup', drop);
+    el.addEventListener('pointercancel', drop);
+    el.addEventListener('dblclick', () => { loadItem(item); sfx.ok(); lcdMsg('LOADED', 'FROM WALL'); });
+  }
+
+  // ---------- layout ----------
+  function fit() {
+    const s = Math.min(1, (innerWidth - 20) / 580, (innerHeight * .62) / (machine.offsetHeight + 30));
+    wrap.style.setProperty('--s', s.toFixed(3));
+    renderBoard();
+  }
+  addEventListener('resize', fit);
+  $('cutter').onclick = () => { $('cutter').classList.add('down'); sfx.cut(); setTimeout(() => $('cutter').classList.remove('down'), 120); };
+
+  $('titleLabel').append(makeLabel({ id: 'title', text: 'LABEL MAKER', tape: 'emb-black', font: 'dymo' }));
+  paintMachine(); renderLCD(); renderBox(); fit();
+})();
+</script>
+</body>
+</html>

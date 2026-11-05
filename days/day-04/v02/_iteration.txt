@@ -1,0 +1,1 @@
+2026-11-05 14:51	Restyle the label maker as a white desktop P-touch (D410-style, no logos): cutter lever, grey LCD, function keys, arrow pad, plus Frame, Symbol, Accent and Auto Format keys

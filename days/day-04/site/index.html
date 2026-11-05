@@ -81,6 +81,8 @@
     .label.font-round { font-family: ui-rounded, "Arial Rounded MT Bold", "SF Pro Rounded", sans-serif; font-weight: 700; }
     .label.font-dymo  { font-family: Oswald, "Arial Narrow", sans-serif; font-weight: 600; letter-spacing: .06em; }
     .label.font-thin  { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 300; }
+    .label.framed { outline: 1.5px solid var(--fg); outline-offset: -5px; }
+    .label.emb.framed { outline-color: rgba(255,255,255,.85); }
     .label.clear {
       background: rgba(255,255,255,.22);
       box-shadow: 0 0 0 1px rgba(255,255,255,.45) inset, 0 1px 2px rgba(60,40,0,.2);
@@ -123,99 +125,127 @@
     #trash.show { opacity: 1; transform: scale(1); }
     #trash.hot { background: rgba(214,40,40,.85); color: #fff; border-color: transparent; transform: scale(1.12); }
 
-    /* ---------- the machine ---------- */
+    /* ---------- the machine: white desktop P-touch body, tape exits on the left ---------- */
     .machine-wrap {
       position: fixed; z-index: 20; left: 50%; bottom: max(18px, env(safe-area-inset-bottom));
       transform-origin: 50% 100%; transform: translateX(-50%) scale(var(--s, 1));
     }
     .machine {
-      position: relative; width: 560px; padding: 22px 26px 26px;
-      border-radius: 40px 40px 52px 52px;
-      background:
-        radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.12), transparent 60%),
-        linear-gradient(180deg, var(--body-hi), #2c2f35 55%, var(--body-lo));
+      position: relative; width: 560px; padding: 18px 26px 26px;
+      border-radius: 44px 52px 58px 58px;
+      background: linear-gradient(180deg, #f8f9fa 0%, #eef0f2 45%, #e1e4e8 100%);
       box-shadow:
-        inset 0 2px 0 rgba(255,255,255,.18), inset 0 -7px 0 rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.4),
-        0 34px 50px -14px rgba(90,55,0,.55), 0 10px 16px rgba(90,55,0,.25);
+        inset 0 2px 0 #fff, inset 0 -7px 0 rgba(0,0,0,.07), inset 0 0 0 1px rgba(0,0,0,.09),
+        0 34px 50px -14px rgba(90,55,0,.5), 0 10px 16px rgba(90,55,0,.22);
     }
+    /* left/top (not transform) so the hump can stay tucked behind the body */
     .machine.printing { animation: hum .09s linear infinite; }
-    @keyframes hum { 0%,100% { transform: translate(0,0); } 25% { transform: translate(.6px,-.4px); } 75% { transform: translate(-.6px,.4px); } }
+    @keyframes hum { 0%,100% { left: 0; top: 0; } 25% { left: .6px; top: -.4px; } 75% { left: -.6px; top: .4px; } }
 
-    .slot {
-      position: absolute; left: -7px; top: 58px; width: 18px; height: 56px; border-radius: 6px;
-      background: linear-gradient(90deg, #8a8e97, #c9ccd2 40%, #6b6f78);
-      box-shadow: 0 2px 4px rgba(0,0,0,.4);
+    .hump { /* raised tape compartment along the back */
+      position: absolute; z-index: -1; top: -22px; left: 96px; right: 0; height: 90px;
+      border-radius: 26px 52px 0 0;
+      background: linear-gradient(180deg, #fbfcfc, #eceef1 40%);
+      box-shadow: inset 0 2px 0 #fff, 0 0 0 1px rgba(0,0,0,.09), 0 -3px 8px rgba(90,55,0,.08);
     }
-    .slot::after { content: ""; position: absolute; left: 4px; right: 9px; top: 6px; bottom: 6px; background: #050506; border-radius: 2px; }
-    .slot-tag { position: absolute; left: 18px; top: 120px; font: 600 9px/1 -apple-system, system-ui, sans-serif; letter-spacing: .14em; color: rgba(255,255,255,.35); }
+    .cutter { /* grey cutter lever on top */
+      position: absolute; top: -27px; left: 160px; width: 48px; height: 20px; border: 0; border-radius: 4px 4px 2px 2px;
+      background: linear-gradient(180deg, #d7dade, #b6bbc1); cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.12), 0 1px 0 rgba(0,0,0,.18);
+      transition: transform .08s;
+    }
+    .cutter.down { transform: translateY(4px); background: linear-gradient(180deg, #c7cbd0, #a7acb3); }
 
-    .cutter {
-      position: absolute; top: -16px; left: 46px; width: 84px; height: 26px; border: 0; border-radius: 10px 10px 4px 4px;
-      background: linear-gradient(180deg, #ff8a3d, var(--accent) 60%, #d44c05); color: #fff;
-      font: 700 11px/26px -apple-system, system-ui, sans-serif; letter-spacing: .2em; text-align: center;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 3px 0 #8c3000; cursor: pointer;
-      transition: transform .08s, box-shadow .08s; z-index: -1;
+    .slot { /* tape exit, left side */
+      position: absolute; left: -6px; top: 78px; width: 14px; height: 48px; border-radius: 5px;
+      background: linear-gradient(90deg, #b5bac0, #e6e8eb 50%, #c3c7cc);
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
     }
-    .cutter.down { transform: translateY(7px); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 0 0 #8c3000; }
+    .slot::after { content: ""; position: absolute; left: 3px; right: 7px; top: 5px; bottom: 5px; background: #2a2c30; border-radius: 2px; }
 
-    .row-top { display: flex; align-items: center; justify-content: space-between; margin: 2px 4px 12px 18px; }
-    .brand { font: italic 800 17px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: .02em; color: #e9e6dc; }
-    .brand b { color: var(--accent); font-style: normal; }
-    .brand small { display: block; font: 600 9px/1.6 -apple-system, system-ui, sans-serif; letter-spacing: .3em; color: rgba(255,255,255,.4); font-style: normal; }
-    .row-top .right { display: flex; gap: 10px; align-items: center; }
-    .mute {
-      width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer; font-size: 14px;
-      background: #17181c; color: #cfcab9; box-shadow: inset 0 2px 3px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.12);
+    .lid {
+      display: grid; place-items: center; padding: 24px 0 26px; margin: 0 -8px;
+      border-radius: 34px 42px 16px 16px;
+      background: linear-gradient(180deg, #fafbfb, #eff1f3);
+      box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(0,0,0,.06), 0 3px 0 rgba(0,0,0,.045);
     }
-    .tape-window {
-      width: 118px; height: 34px; border-radius: 8px; background: #0e0f12; position: relative; overflow: hidden;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.12);
-    }
-    .tape-window .spool {
-      position: absolute; left: 8px; top: 4px; width: 26px; height: 26px; border-radius: 50%;
-      background: radial-gradient(circle, #0e0f12 0 4px, var(--tape) 5px 12px, rgba(0,0,0,.35) 13px);
-      transition: background .2s;
-    }
-    .machine.printing .spool { animation: spin .6s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .tape-window .strip { position: absolute; left: 30px; right: 0; top: 11px; height: 12px; background: var(--tape); }
-    .tape-window::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,255,255,.25), transparent 40%); }
-
-    .screen {
-      background: #121317; border-radius: 14px; padding: 9px; margin: 0 4px 16px;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.12);
+    .bezel {
+      padding: 6px; border-radius: 7px; background: linear-gradient(180deg, #8d9299, #70757d);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.45), 0 1px 0 #fff;
     }
     .lcd {
-      height: 70px; border-radius: 6px; padding: 5px 12px; position: relative; overflow: hidden;
-      background: linear-gradient(180deg, #b9c79f, #a8b78c);
-      box-shadow: inset 0 3px 6px rgba(0,0,0,.35);
-      font-family: VT323, "Courier New", monospace; color: #1f2a17; text-shadow: 1px 1px 0 rgba(31,42,23,.15);
+      width: 236px; height: 82px; padding: 4px 7px 3px; border-radius: 2px; position: relative; overflow: hidden;
+      background: linear-gradient(180deg, #cfd2cb, #bec2ba);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.32);
+      font-family: VT323, "Courier New", monospace; color: #22251f;
     }
-    .lcd .l1 { font-size: 18px; display: flex; justify-content: space-between; opacity: .85; white-space: nowrap; }
-    .lcd .l2 { font-size: 34px; line-height: 40px; white-space: pre; overflow: hidden; }
-    .lcd .cursor { display: inline-block; width: 13px; height: 26px; background: currentColor; vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+    .lcd::after { /* dot-matrix grain */
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 1px, transparent 1px 2px),
+                  repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, transparent 1px 2px);
+    }
+    .lcd .l1 { font-size: 15px; line-height: 17px; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+    .lcd .l1 .len { margin-left: auto; }
+    .lcd .chip { background: #22251f; color: #c9ccc5; padding: 0 3px; border-radius: 1px; }
+    .lcd .l2 { display: flex; align-items: center; height: 40px; border-bottom: 1px solid rgba(34,37,31,.22); }
+    .lcd .gut { font-size: 14px; width: 15px; margin-right: 6px; padding-right: 3px; border-right: 1px solid rgba(34,37,31,.55); line-height: 26px; text-align: center; }
+    .lcd .txt { flex: 1; font-size: 30px; line-height: 40px; white-space: pre; overflow: hidden; }
+    .lcd .l3 { font-size: 14px; line-height: 19px; opacity: .8; white-space: nowrap; overflow: hidden; }
+    .lcd .cursor { display: inline-block; width: 2px; height: 24px; margin: 0 1px; background: currentColor; vertical-align: -3px; animation: blink 1s steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
     .lcd .ph { opacity: .35; }
+    .lcd .marquee { display: inline-block; animation: marquee var(--d) linear forwards; }
+    @keyframes marquee { from { transform: translateX(var(--from)); } to { transform: translateX(var(--to)); } }
+    .lcd.off { background: linear-gradient(180deg, #c2c5be, #b3b7af); }
+    .lcd.off > * { visibility: hidden; }
 
-    .keys { display: grid; gap: 7px; }
-    .krow { display: flex; gap: 6px; justify-content: center; }
+    .keys { display: grid; gap: 7px; margin-top: 16px; }
+    .krow { display: flex; gap: 5px; align-items: center; }
+    .krow.r-fn { padding-top: 12px; margin-bottom: 3px; }
+    .krow.r-bottom { justify-content: center; }
+    .krow .spacer { flex: 1; }
+    .mid { display: flex; align-items: center; gap: 10px; }
+    .mid > .keys { margin: 0; }
     .key {
-      width: 39px; height: 32px; border: 0; border-radius: 8px; padding: 0; cursor: pointer;
-      font: 700 13px/1 -apple-system, system-ui, sans-serif; color: #33312b;
-      background: linear-gradient(180deg, var(--key-hi), var(--key-lo));
-      box-shadow: inset 0 1px 0 #fff, 0 3px 0 #8f8b80, 0 5px 7px rgba(0,0,0,.45);
+      position: relative; width: 30px; height: 27px; border: 0; border-radius: 7px; padding: 0; cursor: pointer;
+      display: grid; place-items: center;
+      font: 500 12px/1 -apple-system, system-ui, "Helvetica Neue", sans-serif; color: #4f555e;
+      background: linear-gradient(180deg, #fff, #eef0f2);
+      box-shadow: 0 0 0 1px #c3c7cc, 0 2px 0 #b5b9bf, 0 3px 6px rgba(0,0,0,.12);
       transition: transform .05s, box-shadow .05s;
     }
-    .key.down, .key:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #fff, 0 1px 0 #8f8b80, 0 2px 3px rgba(0,0,0,.4); }
-    .key.fn { width: 56px; font-size: 10px; letter-spacing: .08em; color: #f1efe8;
-      background: linear-gradient(180deg, #7d8796, #5f6876); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 3px 0 #3a4049, 0 5px 7px rgba(0,0,0,.45); }
-    .key.fn.down, .key.fn:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 1px 0 #3a4049; }
-    .key.fn.on { background: linear-gradient(180deg, #a4b6cc, #7f93ab); }
-    .key.space { width: 150px; }
-    .key.print { width: 84px; color: #fff; font-size: 12px; letter-spacing: .1em;
-      background: linear-gradient(180deg, #ff8a3d, var(--accent)); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 3px 0 #a33a00, 0 5px 7px rgba(0,0,0,.45); }
-    .key.print.down, .key.print:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 0 #a33a00; }
-    .key.del { width: 52px; }
+    .key.down, .key:active { transform: translateY(1.5px); box-shadow: 0 0 0 1px #c3c7cc, 0 .5px 0 #b5b9bf, 0 1px 2px rgba(0,0,0,.12); }
+    .key .sub { position: absolute; top: 3px; right: 4px; font-size: 7.5px; opacity: .7; }
+    .key.w { width: auto; min-width: 34px; padding: 0 8px; font-size: 9.5px; }
+    .key.round { width: 27px; border-radius: 50%; }
+    .key.dark {
+      width: 58px; height: 23px; border-radius: 6px; color: #fff; font-size: 9.5px; line-height: 1.05;
+      background: linear-gradient(180deg, #a5aab1, #8f949b);
+      box-shadow: 0 0 0 1px #81868d, 0 2px 0 #6e737a, 0 3px 6px rgba(0,0,0,.15);
+    }
+    .key.dark.down, .key.dark:active { box-shadow: 0 0 0 1px #81868d, 0 .5px 0 #6e737a; }
+    .key.dark.two { font-size: 8.5px; }
+    .key.bs {
+      width: 36px; color: #fff; font-size: 13px;
+      background: linear-gradient(180deg, #7a7f87, #62676f);
+      box-shadow: 0 0 0 1px #555a61, 0 2px 0 #44484e, 0 3px 6px rgba(0,0,0,.15);
+    }
+    .key.print { width: 54px; height: 30px; font-size: 11px; font-weight: 600; }
+    .key.space { width: 104px; font-size: 9.5px; }
+    .key.enter { min-width: 66px; }
+    .key[data-cap]::before {
+      content: attr(data-cap); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+      font-size: 7.5px; font-weight: 500; color: #80868e; white-space: nowrap;
+    }
+    .key.on::after { /* little status LED */
+      content: ""; position: absolute; top: 4px; left: 4px; width: 4px; height: 4px; border-radius: 50%;
+      background: #2fbf6a; box-shadow: 0 0 4px #2fbf6a;
+    }
+    .cross { display: grid; grid-template-columns: repeat(3, 27px); grid-template-rows: repeat(3, 20px); gap: 2px; margin-left: auto; margin-right: 6px; }
+    .cross .key { width: 27px; height: 20px; border-radius: 6px; color: #6b7179; }
+    .cross .up { grid-area: 1 / 2; } .cross .left { grid-area: 2 / 1; }
+    .cross .right { grid-area: 2 / 3; } .cross .dn { grid-area: 3 / 2; }
+    .cross .hub { grid-area: 2 / 2; border-radius: 50%; margin: 3px 6px; background: #e3e6e9; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); }
 
     /* ---------- tape box drawer ---------- */
     #drawer {
@@ -259,8 +289,8 @@
     #feed .holder .label { right: auto; top: 0; left: 0; transform-origin: 0 0; }
     @media (max-width: 640px) {
       /* phones: tape comes out of the top, like a handheld */
-      .slot { left: auto; right: 170px; top: -8px; width: 64px; height: 18px; background: linear-gradient(180deg, #8a8e97, #c9ccd2 40%, #6b6f78); }
-      .slot::after { left: 6px; right: 6px; top: 4px; bottom: 9px; }
+      .slot { left: 250px; top: -30px; width: 76px; height: 16px; background: linear-gradient(180deg, #b5bac0, #e6e8eb 50%, #c3c7cc); }
+      .slot::after { left: 6px; right: 6px; top: 3px; bottom: 7px; }
       .hint { display: none; }
       .title-wrap .label { font-size: 18px; height: 34px; }
       .label { font-size: 17px; height: 32px; padding: 0 13px; }
@@ -283,16 +313,18 @@
 
   <div class="machine-wrap" id="machineWrap">
     <div class="machine" id="machine">
-      <button class="cutter" id="cutter" title="Cut">CUT</button>
+      <div class="hump" aria-hidden="true"></div>
+      <button class="cutter" id="cutter" title="Cutter lever" aria-label="Cut"></button>
       <div class="slot" aria-hidden="true"></div>
-      <div class="row-top">
-        <div class="brand">TAPE<b>·</b>O<b>·</b>MATIC <small>LABEL PRINTER 3000</small></div>
-        <div class="right">
-          <button class="mute" id="mute" title="Sound on/off">♪</button>
-          <div class="tape-window" title="Tape cassette"><div class="strip"></div><div class="spool"></div></div>
+      <div class="lid">
+        <div class="bezel">
+          <div class="lcd" id="lcd">
+            <div class="l1"><span id="lcdA"></span><span class="len" id="lcdB"></span></div>
+            <div class="l2"><span class="gut">1)</span><span class="txt" id="lcdText"></span></div>
+            <div class="l3" id="lcdC"></div>
+          </div>
         </div>
       </div>
-      <div class="screen"><div class="lcd" id="lcd"><div class="l1"><span id="lcdA"></span><span id="lcdB"></span></div><div class="l2" id="lcdText"></div></div></div>
       <div class="keys" id="keys"></div>
     </div>
   </div>
@@ -347,7 +379,7 @@
   const fontOf = id => FONTS.find(f => f.id === id) || FONTS[0];
   const mm = text => Math.round(text.length * 4.2 + 18);
 
-  const prefs = Object.assign({ tape: 'white', font: 'sans', caps: true, muted: false }, load(K.prefs, {}));
+  const prefs = Object.assign({ tape: 'white', font: 'sans', caps: true, frame: false, muted: false }, load(K.prefs, {}));
   let saved = load(K.saved, []);
   let board = load(K.board, []);
   let text = '';
@@ -393,7 +425,7 @@
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; }
   function makeLabel(item) {
     const t = tapeOf(item.tape), el = document.createElement('div');
-    el.className = 'label font-' + fontOf(item.font).id + (t.emb ? ' emb' : '') + (t.id === 'clear' ? ' clear' : '');
+    el.className = 'label font-' + fontOf(item.font).id + (t.emb ? ' emb' : '') + (t.id === 'clear' ? ' clear' : '') + (item.frame ? ' framed' : '');
     el.style.setProperty('--bg', t.bg);
     if (t.fg) el.style.setProperty('--fg', t.fg);
     if (t.emb) {
@@ -410,94 +442,200 @@
     return el;
   }
 
-  // ---------- keyboard on the machine ----------
-  const ROWS = [
-    ['1','2','3','4','5','6','7','8','9','0',{k:'del',t:'⌫',c:'del'}],
-    ['Q','W','E','R','T','Y','U','I','O','P','&'],
-    ['A','S','D','F','G','H','J','K','L',"'",':'],
-    ['Z','X','C','V','B','N','M',',','.','-','!','?'],
-    [{k:'tape',t:'TAPE',c:'fn'},{k:'font',t:'FONT',c:'fn'},{k:'caps',t:'Aa',c:'fn'},{k:' ',t:'',c:'space'},{k:'save',t:'SAVE',c:'fn'},{k:'print',t:'PRINT',c:'print'}],
+  // ---------- keyboard on the machine (desktop P-touch layout) ----------
+  const SHIFTED = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':"'", '7':'&', '8':'*', '9':'(', '0':')',
+                    '-':'_', '=':'"', ';':':', ',':'<', '.':'>', '/':'?' };
+  const UNSHIFT = Object.fromEntries(Object.entries(SHIFTED).map(([a, b]) => [b, a]));
+  const SYMBOLS = ['★', '♥', '✓', '☺', '✿', '♪', '☀', '☂', '✈', '→', '☆'];
+  const ACCENTS = ['aàáâäå', 'eèéêë', 'iìíîï', 'oòóôöø', 'uùúûü', 'nñ', 'cç', 'yýÿ',
+                   'AÀÁÂÄÅ', 'EÈÉÊË', 'IÌÍÎÏ', 'OÒÓÔÖØ', 'UÙÚÛÜ', 'NÑ', 'CÇ', 'YÝ'];
+  const FONT_CODE = { sans: 'HEL', dymo: 'NAR', serif: 'TMS', mono: 'COU', round: 'RND', thin: 'LGT' };
+  const svg = (d, w = 12) => `<svg width="${w}" height="${w}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const tri = rot => `<svg width="8" height="8" viewBox="0 0 10 10" style="transform:rotate(${rot}deg)"><path d="M5 1.5L9 8.5H1z" fill="currentColor"/></svg>`;
+  const D = (k, t, c = '', cap) => ({ k, t: t ?? k, c, cap });
+  const chars = s => [...s].map(ch => D(ch));
+  const LAYOUT = [
+    [D('power', svg('<path d="M8 2v6"/><path d="M4.6 4.6a5 5 0 1 0 6.8 0"/>'), 'round'), D('menu', 'Menu', 'w'),
+     D('font', 'Font', 'dark'), D('label', 'Label', 'dark'), D('frame', 'Frame', 'dark'), D('symbol', 'Symbol', 'dark'),
+     D('auto', 'Auto<br>Format', 'dark two'), null,
+     D('preview', svg('<circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/>', 13), '', 'Feed'),
+     D('print', 'Print', 'print', 'Print Options')],
+    [...chars('1234567890-='), D('clear', 'Clear', 'w'), D('del', '⌫', 'bs')],
+    'MID',
+    [D('shift', '⇧ Shift', 'w'), ...chars('ZXCVBNM,./'), D('esc', 'Esc'), D('ok', 'OK')],
+    [D('file', 'File', 'w'), D('barcode', 'Barcode', 'w'), D(' ', 'Space', 'space'), D('accent', 'Accent', 'w'), D('enter', 'Enter ↵', 'w enter')],
   ];
+  const MID_ROWS = [[D('tab', 'Tab', 'w'), ...chars('QWERTYUIOP')], [D('caps', 'Caps', 'w'), ...chars('ASDFGHJKL;')]];
+  const CROSS = [D('up', tri(0), 'up'), D('left', tri(-90), 'left'), D('right', tri(90), 'right'), D('down', tri(180), 'dn')];
+
   const keyEls = {};
-  ROWS.forEach(row => {
+  function makeKey(d) {
+    const b = document.createElement('button');
+    b.className = 'key' + (d.c ? ' ' + d.c : '');
+    b.innerHTML = d.t;
+    if (SHIFTED[d.k]) { const s = document.createElement('span'); s.className = 'sub'; s.textContent = SHIFTED[d.k]; b.append(s); }
+    if (d.cap) b.dataset.cap = d.cap;
+    b.dataset.k = d.k; b.tabIndex = -1;
+    b.setAttribute('aria-label', d.k === ' ' ? 'space' : d.k);
+    b.addEventListener('pointerdown', e => { e.preventDefault(); press(d.k, true); });
+    keyEls[d.k.toUpperCase()] = b;
+    return b;
+  }
+  function rowEl(defs) {
     const r = document.createElement('div'); r.className = 'krow';
-    row.forEach(def => {
-      const d = typeof def === 'string' ? { k: def, t: def } : def;
-      const b = document.createElement('button'); b.className = 'key' + (d.c ? ' ' + d.c : '');
-      b.textContent = d.t; b.dataset.k = d.k; b.tabIndex = -1;
-      b.addEventListener('pointerdown', e => { e.preventDefault(); press(d.k, true); });
-      keyEls[d.k.toUpperCase()] = b; r.appendChild(b);
-    });
-    $('keys').appendChild(r);
+    defs.forEach(d => { if (d) r.append(makeKey(d)); else { const s = document.createElement('span'); s.className = 'spacer'; r.append(s); } });
+    return r;
+  }
+  LAYOUT.forEach((row, i) => {
+    if (row === 'MID') {
+      const mid = document.createElement('div'); mid.className = 'mid';
+      const left = document.createElement('div'); left.className = 'keys';
+      MID_ROWS.forEach(r => left.append(rowEl(r)));
+      const cross = document.createElement('div'); cross.className = 'cross';
+      CROSS.forEach(d => cross.append(makeKey(d)));
+      const hub = document.createElement('span'); hub.className = 'hub'; cross.append(hub);
+      mid.append(left, cross); $('keys').append(mid);
+      return;
+    }
+    const r = rowEl(row);
+    if (i === 0) r.classList.add('r-fn');
+    if (i === LAYOUT.length - 1) r.classList.add('r-bottom');
+    $('keys').append(r);
   });
   function flash(k) {
-    const b = keyEls[k.toUpperCase()]; if (!b) return;
+    const b = keyEls[k.toUpperCase()] || keyEls[UNSHIFT[k]]; if (!b) return;
     b.classList.add('down'); setTimeout(() => b.classList.remove('down'), 110);
   }
+
+  let cur = 0, shiftOnce = false, power = true, lastKey = '', symIdx = 0;
+  function insert(s) {
+    if (text.length + s.length > MAX) { sfx.beep(); lcdMsg('TEXT FULL', `MAX ${MAX}`); return; }
+    text = text.slice(0, cur) + s + text.slice(cur); cur += s.length;
+  }
+  function replaceBeforeCursor(ch) { text = text.slice(0, cur - 1) + ch + text.slice(cur); }
+  function cycle(list, id, d) { const i = list.findIndex(x => x.id === id); return list[(i + d + list.length) % list.length].id; }
+  function setShift(on) { shiftOnce = on; keyEls.SHIFT.classList.toggle('on', on); }
+
   function press(k, fromScreen) {
     flash(k); sfx.key();
-    if (printing && k !== 'caps' && k !== 'tape' && k !== 'font') return;
-    if (k === 'del') text = text.slice(0, -1);
-    else if (k === 'tape') { prefs.tape = TAPES[(TAPES.findIndex(t => t.id === prefs.tape) + 1) % TAPES.length].id; savePrefs(); }
-    else if (k === 'font') { prefs.font = FONTS[(FONTS.findIndex(f => f.id === prefs.font) + 1) % FONTS.length].id; savePrefs(); }
-    else if (k === 'caps') { prefs.caps = !prefs.caps; savePrefs(); }
-    else if (k === 'save') return saveCurrent();
-    else if (k === 'print') return printCurrent();
-    else if (k === 'clear') text = '';
-    else {
-      if (text.length >= MAX) { sfx.beep(); lcdMsg('TAPE FULL'); return; }
-      let ch = k;
-      if (fromScreen && /[A-Z]/.test(ch) && !prefs.caps) ch = ch.toLowerCase();
-      text += ch;
+    const prev = lastKey; lastKey = k;
+    if (k === 'power') return togglePower();
+    if (!power) return;
+    if (printing && !['caps', 'label', 'up', 'down', 'font', 'frame', 'menu'].includes(k)) return;
+    if (msgTimer && !printing) { clearTimeout(msgTimer); msgTimer = null; }
+    switch (k) {
+      case 'del': if (cur > 0) { text = text.slice(0, cur - 1) + text.slice(cur); cur--; } break;
+      case 'clear': case 'esc': text = ''; cur = 0; break;
+      case 'left': cur = Math.max(0, cur - 1); break;
+      case 'right': cur = Math.min(text.length, cur + 1); break;
+      case 'home': cur = 0; break;
+      case 'end': cur = text.length; break;
+      case 'label': case 'up': prefs.tape = cycle(TAPES, prefs.tape, 1); savePrefs(); break;
+      case 'down': prefs.tape = cycle(TAPES, prefs.tape, -1); savePrefs(); break;
+      case 'font': prefs.font = cycle(FONTS, prefs.font, 1); savePrefs(); break;
+      case 'frame': prefs.frame = !prefs.frame; savePrefs(); break;
+      case 'caps': prefs.caps = !prefs.caps; savePrefs(); break;
+      case 'shift': setShift(!shiftOnce); break;
+      case 'menu':
+        prefs.muted = !prefs.muted; savePrefs(); if (!prefs.muted) sfx.ok();
+        return lcdMsg(prefs.muted ? 'SOUND OFF' : 'SOUND ON', 'MENU');
+      case 'symbol':
+        if (prev === 'symbol' && cur > 0 && text[cur - 1] === SYMBOLS[symIdx]) { symIdx = (symIdx + 1) % SYMBOLS.length; replaceBeforeCursor(SYMBOLS[symIdx]); }
+        else { symIdx = 0; insert(SYMBOLS[0]); }
+        break;
+      case 'accent': {
+        const ch = text[cur - 1], set = ch && ACCENTS.find(s => s.includes(ch));
+        if (!set) { sfx.beep(); return lcdMsg('TYPE A LETTER', 'ACCENT'); }
+        replaceBeforeCursor(set[(set.indexOf(ch) + 1) % set.length]);
+        break;
+      }
+      case 'auto': return autoFormat();
+      case 'barcode': sfx.beep(); return lcdMsg('NO BARCODES', 'BARCODE');
+      case 'preview': return preview();
+      case 'file': return saveCurrent();
+      case 'print': case 'ok': case 'enter': return printCurrent();
+      case 'tab': insert(' '); break;
+      default: {
+        let ch = k;
+        if (fromScreen) {
+          if (shiftOnce && SHIFTED[ch]) ch = SHIFTED[ch];
+          else if (/[A-Z]/.test(ch) && prefs.caps === shiftOnce) ch = ch.toLowerCase();
+        }
+        if (shiftOnce) setShift(false);
+        insert(ch);
+      }
     }
     renderLCD();
   }
+  const KEYMAP = { Backspace: 'del', Enter: 'print', Escape: 'esc', ArrowLeft: 'left', ArrowRight: 'right',
+                   ArrowUp: 'up', ArrowDown: 'down', Home: 'home', End: 'end', Tab: 'tab' };
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if ($('drawer').classList.contains('open')) { if (e.key === 'Escape') openBox(false); return; }
-    if (e.key === 'Backspace') { e.preventDefault(); press('del'); }
-    else if (e.key === 'Enter') { e.preventDefault(); press('print'); }
-    else if (e.key === 'Escape') press('clear');
+    if (KEYMAP[e.key]) { e.preventDefault(); press(KEYMAP[e.key]); }
     else if (e.key.length === 1) { e.preventDefault(); press(e.key); }
   });
 
+  function togglePower() {
+    if (printing) return;
+    power = !power;
+    $('lcd').classList.toggle('off', !power);
+    if (power) { sfx.ok(); lcdMsg('HELLO!', '', 700); }
+  }
+  function autoFormat() {
+    const pick = list => list[Math.floor(Math.random() * list.length)].id;
+    prefs.tape = pick(TAPES); prefs.font = pick(FONTS); prefs.frame = Math.random() < .4; savePrefs();
+    sfx.ok(); lcdMsg('AUTO FORMAT', `${tapeOf(prefs.tape).name} ${fontOf(prefs.font).name}`);
+  }
+  function preview() {
+    if (!text) { sfx.beep(); return lcdMsg('NOTHING YET', 'PREVIEW'); }
+    clearTimeout(msgTimer);
+    const span = document.createElement('span'); span.className = 'marquee';
+    span.textContent = tapeOf(prefs.tape).emb ? text.toUpperCase() : text;
+    $('lcdA').innerHTML = '<span class="chip">PREVIEW</span>'; $('lcdB').textContent = inches(text); $('lcdC').textContent = '';
+    $('lcdText').replaceChildren(span);
+    const box = $('lcdText').clientWidth, w = span.offsetWidth, dur = Math.max(1600, (w + box) * 11);
+    span.style.setProperty('--from', box + 'px'); span.style.setProperty('--to', -w + 'px'); span.style.setProperty('--d', dur + 'ms');
+    msgTimer = setTimeout(() => { msgTimer = null; renderLCD(); }, dur);
+  }
+
   // ---------- LCD ----------
   let msgTimer;
+  const inches = s => (mm(s) / 25.4).toFixed(1) + '"';
   function savePrefs() { store(K.prefs, prefs); paintMachine(); }
   function paintMachine() {
-    const t = tapeOf(prefs.tape);
-    machine.style.setProperty('--tape', t.swatch || t.bg);
     keyEls.CAPS.classList.toggle('on', prefs.caps);
-    $('mute').textContent = prefs.muted ? '×' : '♪';
+    keyEls.FRAME.classList.toggle('on', !!prefs.frame);
   }
   function renderLCD() {
     if (msgTimer) return;
     const t = tapeOf(prefs.tape);
-    $('lcdA').textContent = `${t.name}  ${fontOf(prefs.font).name}  ${prefs.caps ? 'ABC' : 'abc'}`;
-    $('lcdB').textContent = text ? `≈${mm(text)}MM` : `${text.length}/${MAX}`;
-    const shown = (t.emb ? text.toUpperCase() : text);
-    const vis = shown.length > 19 ? '…' + shown.slice(-18) : shown;
-    $('lcdText').innerHTML = '';
-    if (!text) { const p = document.createElement('span'); p.className = 'ph'; p.textContent = 'TYPE A LABEL'; $('lcdText').append(p); }
-    else $('lcdText').append(vis);
-    const c = document.createElement('span'); c.className = 'cursor'; $('lcdText').append(c);
+    $('lcdA').innerHTML = (prefs.caps ? '<span class="chip">Caps</span>' : '') + `<span>${FONT_CODE[fontOf(prefs.font).id]}</span>` + (shiftOnce ? '<span>⇧</span>' : '');
+    $('lcdB').textContent = inches(text);
+    $('lcdC').textContent = `${t.name} TAPE${prefs.frame ? ' · FRAME' : ''}  ${text.length}/${MAX}`;
+    const shown = t.emb ? text.toUpperCase() : text;
+    const W = 15, start = Math.max(0, cur - (W - 1));
+    const c = document.createElement('span'); c.className = 'cursor';
+    const out = $('lcdText');
+    if (!text) { const p = document.createElement('span'); p.className = 'ph'; p.textContent = 'TYPE A LABEL'; out.replaceChildren(c, p); }
+    else out.replaceChildren(shown.slice(start, cur), c, shown.slice(cur, start + W));
   }
   function lcdMsg(a, b = '', ms = 900) {
     clearTimeout(msgTimer); msgTimer = null;
-    $('lcdA').textContent = b; $('lcdB').textContent = ''; $('lcdText').textContent = a;
+    $('lcdA').textContent = b; $('lcdB').textContent = ''; $('lcdC').textContent = ''; $('lcdText').textContent = a;
     if (ms) msgTimer = setTimeout(() => { msgTimer = null; renderLCD(); }, ms);
     else msgTimer = 1;
   }
 
   // ---------- tape box (saved labels) ----------
   function remember(item) {
-    const hit = saved.find(s => s.text === item.text && s.tape === item.tape && s.font === item.font);
+    const hit = saved.find(s => s.text === item.text && s.tape === item.tape && s.font === item.font && !!s.frame === !!item.frame);
     if (hit) { hit.ts = Date.now(); saved = [hit, ...saved.filter(s => s !== hit)]; }
-    else saved.unshift({ id: uid(), text: item.text, tape: item.tape, font: item.font, irl: false, ts: Date.now() });
+    else saved.unshift({ id: uid(), text: item.text, tape: item.tape, font: item.font, frame: !!item.frame, irl: false, ts: Date.now() });
     store(K.saved, saved); renderBox();
     $('boxBtn').classList.remove('bump'); void $('boxBtn').offsetWidth; $('boxBtn').classList.add('bump');
   }
-  function current() { return { text: text.trim() ? text : '', tape: prefs.tape, font: prefs.font }; }
+  function current() { return { text: text.trim() ? text : '', tape: prefs.tape, font: prefs.font, frame: !!prefs.frame }; }
   function saveCurrent() {
     const it = current(); if (!it.text) { sfx.beep(); lcdMsg('NOTHING TO SAVE'); return; }
     remember(it); sfx.ok(); lcdMsg('SAVED TO BOX', 'TAPE BOX ✓');
@@ -515,7 +653,7 @@
       const li = document.createElement('li'); if (s.irl) li.className = 'done';
       li.append(makeLabel(s));
       const meta = document.createElement('div'); meta.className = 'meta';
-      meta.textContent = `${tapeOf(s.tape).name.toLowerCase()} tape · ${fontOf(s.font).name.toLowerCase()} · ≈${mm(s.text)} mm`;
+      meta.textContent = `${tapeOf(s.tape).name.toLowerCase()} tape · ${fontOf(s.font).name.toLowerCase()}${s.frame ? ' · frame' : ''} · ≈${mm(s.text)} mm`;
       const acts = document.createElement('div'); acts.className = 'acts';
       const btn = (txt, cls, fn) => { const b = document.createElement('button'); b.textContent = txt; if (cls) b.className = cls; b.onclick = fn; acts.append(b); };
       btn('Print', 'go', () => { openBox(false); loadItem(s); setTimeout(printCurrent, 350); });
@@ -527,7 +665,7 @@
       li.append(meta, acts); list.append(li);
     });
   }
-  function loadItem(s) { text = s.text; prefs.tape = s.tape; prefs.font = s.font; savePrefs(); renderLCD(); }
+  function loadItem(s) { text = s.text; cur = text.length; prefs.tape = s.tape; prefs.font = s.font; prefs.frame = !!s.frame; savePrefs(); renderLCD(); }
   function openBox(on) { $('drawer').classList.toggle('open', on); $('scrim').classList.toggle('show', on); }
   $('boxBtn').onclick = () => openBox(true);
   $('closeBox').onclick = $('scrim').onclick = () => openBox(false);
@@ -535,7 +673,7 @@
     filter = t.dataset.f; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); renderBox();
   });
   $('copyList').onclick = async () => {
-    const lines = saved.filter(s => !s.irl).map(s => `${s.text}  (${tapeOf(s.tape).name.toLowerCase()}, ${fontOf(s.font).name.toLowerCase()})`).join('\n');
+    const lines = saved.filter(s => !s.irl).map(s => `${s.text}  (${tapeOf(s.tape).name.toLowerCase()}, ${fontOf(s.font).name.toLowerCase()}${s.frame ? ', frame' : ''})`).join('\n');
     try { await navigator.clipboard.writeText(lines || '(empty)'); toast('Copied ' + saved.filter(s => !s.irl).length + ' labels'); }
     catch { toast('Could not copy'); }
   };
@@ -675,12 +813,11 @@
 
   // ---------- layout ----------
   function fit() {
-    const s = Math.min(1, (innerWidth - 20) / 580, (innerHeight * .58) / 360);
+    const s = Math.min(1, (innerWidth - 20) / 580, (innerHeight * .62) / (machine.offsetHeight + 30));
     wrap.style.setProperty('--s', s.toFixed(3));
     renderBoard();
   }
   addEventListener('resize', fit);
-  $('mute').onclick = () => { prefs.muted = !prefs.muted; savePrefs(); if (!prefs.muted) sfx.ok(); };
   $('cutter').onclick = () => { $('cutter').classList.add('down'); sfx.cut(); setTimeout(() => $('cutter').classList.remove('down'), 120); };
 
   $('titleLabel').append(makeLabel({ id: 'title', text: 'LABEL MAKER', tape: 'emb-black', font: 'dymo' }));
