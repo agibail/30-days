@@ -1,0 +1,1 @@
+2026-11-05 16:16	Show only your hands: the background and you are cut away automatically, the hands sit on a clean backdrop, and Download PNG is transparent

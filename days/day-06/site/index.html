@@ -58,7 +58,7 @@
     .seg button + button { border-left: 1px solid var(--ink); }
     .seg button.on { background: var(--ink); color: var(--card); }
     .bar .spacer { flex: 1; }
-    .stagewrap { position: relative; background: #ead7d1; border-radius: 18px; overflow: hidden; display: grid; place-items: center; min-height: 240px; }
+    .stagewrap { position: relative; background: radial-gradient(120% 90% at 50% 35%, #fffaf7, #f0dfd9 70%, #e8d2cb); border-radius: 18px; overflow: hidden; display: grid; place-items: center; min-height: 240px; }
     #view { display: block; touch-action: none; max-width: 100%; }
     #view.paint { cursor: crosshair; }
     #view.add { cursor: copy; }
@@ -71,7 +71,9 @@
     .arrows { display: flex; gap: 6px; }
     .arrows button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--ink); background: transparent; font-size: 15px; line-height: 1; }
     .arrows button:hover { background: var(--ink); color: var(--card); }
-    #zoom { display: block; width: 100%; height: 300px; border-radius: 14px; background: #ead7d1; touch-action: none; cursor: crosshair; }
+    .zoomwrap { border-radius: 14px; overflow: hidden; background: radial-gradient(circle at 50% 40%, #fffaf7, #eedcd6); }
+    #view, #zoom { filter: drop-shadow(0 10px 14px rgba(90, 40, 50, .26)); }
+    #zoom { display: block; width: 100%; height: 300px; touch-action: none; cursor: crosshair; }
     .group { margin-top: 14px; }
     .group > label, .glabel { display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -109,7 +111,7 @@
   <header>
     <div>
       <h1>Nail <em>Studio</em></h1>
-      <p>Upload a photo of your hands. Your nails come back bare every time. Grow them, cut them, file them into shape, then paint.</p>
+      <p>Upload a photo of your hands. Only your hands are kept, and your nails come back bare every time. Grow them, cut them, file them into shape, then paint.</p>
     </div>
     <div class="head-btns">
       <button class="btn" id="newPhoto">New photo</button>
@@ -123,7 +125,7 @@
     <div>
       <div class="hands-art"><span></span><span></span><span></span><span></span><span></span></div>
       <h2>Show me your hands</h2>
-      <p>Hold your hands up with the backs facing the camera, fingers spread, nails in view. Drop the photo here, paste it, or choose one. It stays in your browser.</p>
+      <p>Hold your hands up with the backs facing the camera, fingers spread, nails in view. Only your hands are kept: you and the background are cut away. Drop the photo here, paste it, or choose one. It stays in your browser.</p>
       <button class="btn solid" id="choose">Choose a photo</button>
     </div>
   </section>
@@ -154,7 +156,7 @@
         <b id="nailName">Nail</b>
         <div class="arrows"><button id="prev" title="Previous nail (←)">‹</button><button id="next" title="Next nail (→)">›</button></div>
       </div>
-      <canvas id="zoom"></canvas>
+      <div class="zoomwrap"><canvas id="zoom"></canvas></div>
 
       <div class="group">
         <div class="glabel">Shape</div>
@@ -218,7 +220,7 @@
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const KEY = 'day06-nail-studio-v1';
+  const KEY = 'day06-nail-studio-v2';
   const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
   const MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 
@@ -243,7 +245,7 @@
   const LAYER_W = 100, LAYER_H = 410; // x -50..50, y -10..400
   const FREE_MAX = 2.6;
 
-  let photo = null, photoData = null, photoURL = '';
+  let photo = null, photoData = null, photoURL = '', photoCut = false, cutting = false;
   let nails = [], sel = 0, nextId = 1;
   let mode = 'paint', tool = 'brush', scope = 'all';
   let color = POLISH[2][1], colorName = POLISH[2][0];
@@ -441,6 +443,7 @@
     const OFF = 30000;
     ctx.save();
     ctx.setTransform(new DOMMatrix().translate(OFF, 0).multiply(U));
+    if (photoCut) ctx.globalCompositeOperation = 'source-atop'; // only on the hand, never past its edge
     ctx.shadowColor = rgb(skin); ctx.shadowBlur = Math.max(1, 16 * ppu); ctx.shadowOffsetX = -OFF;
     ctx.fillStyle = '#000';
     roundedCover(ctx, L); ctx.fill(); ctx.fill();
@@ -496,11 +499,12 @@
     }
   }
 
-  function drawScene(ctx, M, extras) {
+  function drawScene(ctx, M, extras, plain) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     if (!photo) return;
     ctx.setTransform(M);
+    if (!photoCut && cutting) return; // never flash the full photo while the hands are being cut out
     ctx.drawImage(photo, 0, 0);
     if (compare) return;
     for (const n of nails) drawNail(ctx, M, n);
@@ -597,7 +601,7 @@
     view.width = Math.round(R.w * s * dpr); view.height = Math.round(R.h * s * dpr);
     viewM = new DOMMatrix().scale(s * dpr, s * dpr).translate(-R.x, -R.y);
     $('#whole').textContent = whole || !crop ? 'Zoom to hands' : 'Whole photo';
-    $('#whole').disabled = !crop;
+    $('#whole').hidden = !crop;
     zoom.width = Math.round(zoom.clientWidth * dpr); zoom.height = Math.round(zoom.clientHeight * dpr);
     dirty = true;
   }
@@ -654,15 +658,16 @@
   // ---------- persistence (photo + where the nails are; never the polish) ----------
   function persist() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ photo: photoURL, nails: nails.map(n => ({ b: n.b, ang: n.ang, w: n.w, len: n.len, skin: n.skin, finger: n.finger })) }));
+      localStorage.setItem(KEY, JSON.stringify({ photo: photoURL, cut: photoCut, nails: nails.map(n => ({ b: n.b, ang: n.ang, w: n.w, len: n.len, skin: n.skin, finger: n.finger })) }));
     } catch (e) {}
   }
   function restore() {
+    try { localStorage.removeItem('day06-nail-studio-v1'); } catch (e) {} // old saves kept the whole photo
     let d; try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     if (!d || !d.photo) return;
     const im = new Image();
     im.onload = () => {
-      setPhoto(im, d.photo);
+      setPhoto(im, d.photo, d.cut);
       nails = (d.nails || []).map(s => Object.assign(makeNail(s.b, s.ang, s.w, s.len), s.skin ? { skin: s.skin } : {}, { finger: s.finger }));
       orderNails(); sel = 0; fitCrop(); changed();
       if (!nails.length) detect();
@@ -671,13 +676,16 @@
   }
 
   // ---------- photo ----------
-  function setPhoto(img, url) {
+  function setPhoto(img, url, cut) {
     const max = 1600, sc = Math.min(1, max / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
     const c = document.createElement('canvas');
     c.width = Math.round((img.naturalWidth || img.width) * sc); c.height = Math.round((img.naturalHeight || img.height) * sc);
     const cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0, c.width, c.height);
     photo = c; photoData = cx.getImageData(0, 0, c.width, c.height);
     photoURL = url || c.toDataURL('image/jpeg', 0.86);
+    // a PNG that is already cut out (lots of transparent pixels) is used as is
+    let clear = 0; for (let i = 3; i < photoData.data.length; i += 40) if (photoData.data[i] < 250) clear++;
+    photoCut = !!cut || clear > photoData.data.length / 40 * 0.05; crop = null;
     $('#drop').hidden = true; $('#app').hidden = false; $('#download').disabled = false;
     undoStack = []; nails = []; sel = 0;
     layout();
@@ -685,13 +693,14 @@
   function loadFile(f) {
     if (!f || !/^image\//.test(f.type) && !/\.(heic|heif)$/i.test(f.name)) return;
     const url = URL.createObjectURL(f), im = new Image();
-    im.onload = () => { setPhoto(im); URL.revokeObjectURL(url); persist(); detect(); };
+    im.onload = () => { setPhoto(im); URL.revokeObjectURL(url); detect(); };
     im.onerror = () => alert("That photo didn't open here. iPhone HEIC photos only open in Safari, so try a JPG or PNG.");
     im.src = url;
   }
 
   async function detect() {
     if (!photo) return;
+    cutting = !photoCut; dirty = true;
     status('Finding your nails…');
     try {
       if (!landmarker) {
@@ -713,6 +722,7 @@
         });
       }
       if (!found.length) throw new Error('no hands');
+      if (!photoCut) { status('Cutting out your hands…'); await cutOut(res.landmarks, found); }
       snapshot(); nails = found; orderNails(); sel = 0;
       fitCrop();
       status(`Found ${found.length} nails. Use “Fit nails” if any are off.`, 3800);
@@ -721,7 +731,107 @@
       console.warn(e);
       status("Couldn't find hands automatically. Drag from cuticle to fingertip to add each nail.", 6000);
       setMode('add');
+    } finally { cutting = false; dirty = true; }
+  }
+
+  // ---------- cut-out: keep only the hands ----------
+  // A rough hand region from the landmarks (bones, palm, fingertips, a bit of wrist), refined per hand by
+  // MediaPipe's multiclass selfie segmenter, which tells body skin apart from face, hair, clothes and background.
+  const SEG_MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite';
+  let segmenter = null;
+  const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+  async function cutOut(hands, found) {
+    const W = photo.width, H = photo.height;
+    const region = document.createElement('canvas'); region.width = W; region.height = H;
+    const r = region.getContext('2d');
+    r.strokeStyle = r.fillStyle = '#fff'; r.lineCap = r.lineJoin = 'round';
+    const boxes = [];
+    for (const lm of hands) {
+      const P = i => [lm[i].x * W, lm[i].y * H];
+      const d = (a, b) => Math.hypot(P(a)[0] - P(b)[0], P(a)[1] - P(b)[1]);
+      const span = (d(5, 9) + d(9, 13) + d(13, 17)) / 3;
+      const line = (a, b, w) => { r.lineWidth = w; r.beginPath(); r.moveTo(a[0], a[1]); r.lineTo(b[0], b[1]); r.stroke(); };
+      const along = (a, b, k) => [a[0] + (a[0] - b[0]) * k, a[1] + (a[1] - b[1]) * k];
+      [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [9, 10], [10, 11], [11, 12], [13, 14], [14, 15], [15, 16], [0, 17], [17, 18], [18, 19], [19, 20], [5, 9], [9, 13], [13, 17]]
+        .forEach(([a, b]) => line(P(a), P(b), span * 1.45));
+      r.beginPath(); [0, 1, 2, 5, 9, 13, 17].forEach((i, k) => k ? r.lineTo(...P(i)) : r.moveTo(...P(i))); r.fill();
+      [[4, 3], [8, 7], [12, 11], [16, 15], [20, 19]].forEach(([t, s]) => line(P(t), along(P(t), P(s), 0.9), span * 1.2));
+      // the wrist fades out instead of ending in a hard edge
+      const wEnd = along(P(0), P(9), 0.6), wg = r.createLinearGradient(P(0)[0], P(0)[1], wEnd[0], wEnd[1]);
+      wg.addColorStop(0, '#fff'); wg.addColorStop(0.15, '#fff'); wg.addColorStop(1, 'rgba(255,255,255,0)');
+      r.strokeStyle = wg; r.lineCap = 'butt'; line(P(0), wEnd, span * 2.6); r.strokeStyle = '#fff'; r.lineCap = 'round';
+      r.beginPath(); [0, 1, 2, 5, 9, 13, 17].forEach((i, k) => k ? r.lineTo(...P(i)) : r.moveTo(...P(i))); r.fill();
+      let x0 = W, y0 = H, x1 = 0, y1 = 0;
+      for (let i = 0; i < 21; i++) { const [x, y] = P(i); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+      const [wx, wy] = along(P(0), P(9), 0.6);
+      x0 = Math.min(x0, wx); y0 = Math.min(y0, wy); x1 = Math.max(x1, wx); y1 = Math.max(y1, wy);
+      const pad = span * 1.6;
+      x0 = Math.max(0, Math.floor(x0 - pad)); y0 = Math.max(0, Math.floor(y0 - pad));
+      x1 = Math.min(W, Math.ceil(x1 + pad)); y1 = Math.min(H, Math.ceil(y1 + pad));
+      boxes.push({ x0, y0, w: x1 - x0, h: y1 - y0, palm: P(0).map((v, i) => (v + P(9)[i]) / 2) });
     }
+    const reg = r.getImageData(0, 0, W, H).data;
+    const src = photoData.data, alpha = new Float32Array(W * H);
+
+    let segOK = true;
+    try {
+      if (!segmenter) {
+        const { FilesetResolver, ImageSegmenter } = await import(MP + '/vision_bundle.mjs');
+        const fs = await FilesetResolver.forVisionTasks(MP + '/wasm');
+        segmenter = await ImageSegmenter.createFromOptions(fs, { baseOptions: { modelAssetPath: SEG_MODEL }, runningMode: 'IMAGE', outputConfidenceMasks: true, outputCategoryMask: false });
+      }
+      for (const bx of boxes) {
+        const c = document.createElement('canvas'); c.width = bx.w; c.height = bx.h;
+        c.getContext('2d').drawImage(photo, bx.x0, bx.y0, bx.w, bx.h, 0, 0, bx.w, bx.h);
+        const res = segmenter.segment(c), masks = res.confidenceMasks;
+        const mw = masks[2].width, mh = masks[2].height;
+        const skin = masks[2].getAsFloat32Array();
+        for (let y = 0; y < bx.h; y++) for (let x = 0; x < bx.w; x++) {
+          const mi = Math.min(mh - 1, (y * mh / bx.h) | 0) * mw + Math.min(mw - 1, (x * mw / bx.w) | 0);
+          const gi = (y + bx.y0) * W + x + bx.x0;
+          const a = smooth(0.3, 0.7, skin[mi]) * (reg[gi * 4 + 3] / 255);
+          if (a > alpha[gi]) alpha[gi] = a;
+        }
+        res.close?.();
+      }
+    } catch (e) { console.warn('segmenter', e); segOK = false; }
+
+    if (!segOK) {
+      // fallback: colours close to the palm's skin tone, inside the hand region
+      for (const bx of boxes) {
+        const pi = (Math.round(bx.palm[1]) * W + Math.round(bx.palm[0])) * 4;
+        const sr = src[pi], sg = src[pi + 1], sb = src[pi + 2], ss = sr + sg + sb + 1;
+        for (let y = bx.y0; y < bx.y0 + bx.h; y++) for (let x = bx.x0; x < bx.x0 + bx.w; x++) {
+          const gi = y * W + x, i = gi * 4, s = src[i] + src[i + 1] + src[i + 2] + 1;
+          const dc = Math.hypot(src[i] / s - sr / ss, src[i + 1] / s - sg / ss), db = Math.abs(s - ss) / ss;
+          const a = (1 - smooth(0.025, 0.06, dc)) * (1 - smooth(0.45, 0.8, db)) * (reg[i + 3] / 255);
+          if (a > alpha[gi]) alpha[gi] = a;
+        }
+      }
+    }
+
+    // apply alpha, then crop to the hands
+    const out = new ImageData(W, H);
+    let x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (let gi = 0; gi < W * H; gi++) {
+      const i = gi * 4, a = alpha[gi];
+      out.data[i] = src[i]; out.data[i + 1] = src[i + 1]; out.data[i + 2] = src[i + 2]; out.data[i + 3] = a * 255;
+      if (a > 0.05) { const x = gi % W, y = (gi / W) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 <= x0) return;
+    const m = Math.round(Math.max(x1 - x0, y1 - y0) * 0.04);
+    x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m); x1 = Math.min(W, x1 + m); y1 = Math.min(H, y1 + m);
+    const full = document.createElement('canvas'); full.width = W; full.height = H;
+    full.getContext('2d').putImageData(out, 0, 0);
+    const c = document.createElement('canvas'); c.width = x1 - x0; c.height = y1 - y0;
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    cx.drawImage(full, x0, y0, c.width, c.height, 0, 0, c.width, c.height);
+    photo = c; photoData = cx.getImageData(0, 0, c.width, c.height); photoCut = true;
+    const webp = c.toDataURL('image/webp', 0.9);
+    photoURL = webp.startsWith('data:image/webp') ? webp : c.toDataURL('image/png');
+    for (const n of found) n.b = { x: n.b.x - x0, y: n.b.y - y0 };
+    crop = null; layout();
   }
 
   // ---------- pointer helpers ----------
@@ -949,7 +1059,7 @@
     if (!photo) return;
     const c = document.createElement('canvas'); c.width = photo.width; c.height = photo.height;
     const was = compare; compare = false;
-    drawScene(c.getContext('2d'), new DOMMatrix());
+    drawScene(c.getContext('2d'), new DOMMatrix(), null, true);
     compare = was;
     c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'nails-day06.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }, 'image/png');
   };
