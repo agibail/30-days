@@ -1,5 +1,5 @@
 window.MANIFEST = {
-  "generated": "2026-11-05 13:12",
+  "generated": "2026-11-05 13:19",
   "start": "2026-10-30",
   "total": 30,
   "repo": "https://github.com/agibail/30-days",
@@ -10,6 +10,18 @@ window.MANIFEST = {
      "site": "days/day-01/site/index.html",
      "media": [],
      "iterations": [{"id": "v01", "path": "days/day-01/v01/index.html", "date": "2026-11-05 13:12", "note": "Cigarette counter app: one-tap +1, daily limit, 14-day chart, private on-device storage"}],
-     "log": [{"date": "2026-11-05 13:12", "msg": "Cigarette counter app: one-tap +1, daily limit, 14-day chart, private on-device storage"}]}
+     "log": [{"date": "2026-11-05 13:12", "msg": "Cigarette counter app: one-tap +1, daily limit, 14-day chart, private on-device storage"}]},
+    {"day": 2, "slug": "day-02", "title": "Deep Watch", "date": "2026-10-31", "type": "website",
+     "notes": "What I'm making today, what I learned, what I'd change.",
+     "site": "days/day-02/site/index.html",
+     "media": [],
+     "iterations": [],
+     "log": []},
+    {"day": 3, "slug": "day-03", "title": "Shoe Finder", "date": "2026-11-01", "type": "website",
+     "notes": "What I'm making today, what I learned, what I'd change.",
+     "site": "days/day-03/site/index.html",
+     "media": [],
+     "iterations": [],
+     "log": []}
   ]
 };
