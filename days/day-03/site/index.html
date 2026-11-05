@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Day 3 · Shoe Finder</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230096d6'/><path d='M14 66 Q14 40 30 38 L40 38 Q46 50 62 54 L80 58 Q88 60 88 68 L88 72 L14 72 Z' fill='%23ff1f8f'/><rect x='10' y='74' width='80' height='6' rx='3' fill='%232e8b3a'/></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     /* Caribbean azure, hot pink, putting green */
     :root {
@@ -25,13 +23,13 @@
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    body { margin: 0; background: linear-gradient(180deg, var(--bg), var(--paper) 70%) fixed; background-color: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, system-ui, "Helvetica Neue", sans-serif; }
+    body { margin: 0; background: linear-gradient(180deg, var(--bg), var(--paper) 70%) fixed; background-color: var(--bg); color: var(--ink); font: 15px/1.45 Helvetica, "Helvetica Neue", Arial, sans-serif; }
     button, input { font: inherit; color: inherit; }
     a { color: inherit; }
-    .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    .serif { font-family: Helvetica, "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: -.03em; }
 
     header { padding: 28px 20px 8px; max-width: 1280px; margin: 0 auto; display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    header h1 { margin: 0; font-size: clamp(40px, 7vw, 76px); line-height: .9; letter-spacing: -.02em; }
+    header h1 { margin: 0; font-size: clamp(36px, 6vw, 64px); line-height: .95; letter-spacing: -.045em; }
     header h1 { color: var(--azure); }
     header h1 em { color: var(--accent); }
     header p { margin: 8px 0 0; color: var(--muted); max-width: 46ch; }
@@ -51,7 +49,7 @@
     .drop.over, .drop:hover { border-color: var(--accent); }
     .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--tile); }
     .drop .hint { padding: 24px; color: var(--muted); }
-    .drop .hint b { display: block; color: var(--ink); font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 28px; margin-bottom: 6px; }
+    .drop .hint b { display: block; color: var(--ink); font-weight: 700; letter-spacing: -.02em; font-size: 22px; margin-bottom: 6px; }
     .urlrow { display: flex; gap: 6px; }
     .urlrow input, .steer input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; }
     .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
@@ -77,7 +75,7 @@
     .trail span { color: var(--muted); }
 
     .results-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
-    .results-head h2 { margin: 0; font-size: 34px; }
+    .results-head h2 { margin: 0; font-size: 26px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
     @media (max-width: 500px) { .grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
     .card { position: relative; background: var(--paper); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); cursor: pointer; }
@@ -92,7 +90,7 @@
     .card .heart { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,.85); color: #17140f; cursor: pointer; font-size: 16px; line-height: 32px; padding: 0; }
     .card .heart.on { color: var(--accent); }
     .empty { color: var(--muted); padding: 40px 0; }
-    .empty .serif { font-size: 30px; color: var(--ink); display: block; margin-bottom: 6px; }
+    .empty .serif { font-size: 24px; color: var(--ink); display: block; margin-bottom: 6px; }
     .examples { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
     .examples button { width: 96px; height: 96px; border-radius: 12px; border: 1px solid var(--line); background: var(--tile); padding: 0; cursor: pointer; overflow: hidden; }
     .examples img { width: 100%; height: 100%; object-fit: contain; }
@@ -104,7 +102,7 @@
     .detail .big { background: var(--tile); display: grid; place-items: center; min-height: 320px; }
     .detail .big img { width: 100%; max-height: 70vh; object-fit: contain; }
     .detail .info { padding: 22px; display: grid; gap: 12px; align-content: start; }
-    .detail h2 { margin: 0; font-size: 36px; line-height: 1; }
+    .detail h2 { margin: 0; font-size: 28px; line-height: 1.05; }
     .detail dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; }
     .detail dt { color: var(--muted); }
     .detail dd { margin: 0; }
@@ -114,7 +112,7 @@
     .board { position: fixed; inset: 0 0 0 auto; width: min(380px, 100vw); background: var(--paper); border-left: 1px solid var(--line); transform: translateX(100%); transition: transform .25s; z-index: 10; display: flex; flex-direction: column; }
     .board.open { transform: none; box-shadow: -20px 0 60px rgba(0,0,0,.15); }
     .board header { padding: 18px; align-items: center; }
-    .board header h2 { margin: 0; font-size: 32px; }
+    .board header h2 { margin: 0; font-size: 24px; }
     .board .list { flex: 1; overflow: auto; padding: 0 18px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
     .board .foot { padding: 14px 18px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
     .note { font-size: 12.5px; color: var(--muted); }
