@@ -70,7 +70,7 @@
     const done = M.days.length, total = M.total || 30, t = todayNum();
     const pct = Math.min(100, Math.round((done / total) * 100));
     document.getElementById("progress").innerHTML =
-      `<span>${done}/${total}</span><span class="bar"><i style="width:${pct}%"></i></span>` +
+      `<span>${done}/${total}</span><span class="bar"><i style="width:${pct}%;background-size:${pct ? (10000 / pct).toFixed(1) : 100}% 100%"></i></span>` +
       (t >= 1 && t <= total ? `<span>today: day ${t}</span>` : "");
   }
 
@@ -193,6 +193,10 @@
   // ---------- routing ----------
   function route() {
     const m = location.hash.match(/^#\/day\/(\d+)(?:\/(v\d+|latest))?(\/compare)?/);
+    // a day page takes on that day's yellow; the grid stays greyscale
+    document.body.classList.toggle("day-theme", !!m);
+    if (m) document.body.setAttribute("style", shade(+m[1], Math.max(M.total || 30, +m[1])));
+    else document.body.removeAttribute("style");
     if (m) renderDay(+m[1], m[2], !!m[3]); else renderGrid();
     window.scrollTo(0, 0);
   }

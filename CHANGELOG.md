@@ -3,6 +3,7 @@
 Every change to the 30 Days project, newest first. Entries are added by `./30 save`.
 
 <!-- new entries go below this line -->
+- 2026-11-05 15:05 · Day pages take on that day's yellow; progress bar runs warm to neon
 - 2026-11-05 15:03 · **Day 07** · Swatch Card: turn colour photos into paint-chip cards with auto palettes, click-to-pick colours, paint-store names, three layouts, PNG download and a saved shelf
 - 2026-11-05 14:51 · **Day 04** · Restyle the label maker as a white desktop P-touch (D410-style, no logos): cutter lever, grey LCD, function keys, arrow pad, plus Frame, Symbol, Accent and Auto Format keys
 - 2026-11-05 13:49 · Short links for each day: agibail.github.io/30days/day-03/
