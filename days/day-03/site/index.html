@@ -4,36 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Day 3 · Shoe Finder</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2317140f'/><path d='M14 66 Q14 40 30 38 L40 38 Q46 50 62 54 L80 58 Q88 60 88 68 L88 72 L14 72 Z' fill='%23f2ece2'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230096d6'/><path d='M14 66 Q14 40 30 38 L40 38 Q46 50 62 54 L80 58 Q88 60 88 68 L88 72 L14 72 Z' fill='%23ff1f8f'/><rect x='10' y='74' width='80' height='6' rx='3' fill='%232e8b3a'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
+    /* Caribbean azure, hot pink, putting green */
     :root {
-      --bg: #f3efe7; --paper: #fbf9f4; --ink: #17140f; --muted: #7a7266; --line: #d9d2c4;
-      --accent: #b4441f; --tile: #ffffff; --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+      --bg: #d9f3fc; --paper: #f5fcff; --ink: #06324a; --muted: #3f6b80; --line: #9fd8ee;
+      --accent: #ff1f8f; --azure: #0096d6; --green: #2e8b3a; --green-soft: #e3f4e1; --on-green: #ffffff;
+      --tile: #ffffff; --shadow: 0 1px 2px rgba(0,60,90,.08), 0 8px 24px rgba(0,120,180,.12);
       color-scheme: light;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #14120f; --paper: #1c1915; --ink: #f2ece2; --muted: #9c9385; --line: #34302a;
-        --accent: #e8794f; --tile: #ece8e1; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+        --bg: #032636; --paper: #063a52; --ink: #e6f8ff; --muted: #8fc3d8; --line: #15597a;
+        --accent: #ff4fa8; --azure: #2cc2f2; --green: #4fbf4a; --green-soft: #0d3f2a; --on-green: #032636;
+        --tile: #eef9fd; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
         color-scheme: dark;
       }
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, system-ui, "Helvetica Neue", sans-serif; }
+    body { margin: 0; background: linear-gradient(180deg, var(--bg), var(--paper) 70%) fixed; background-color: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, system-ui, "Helvetica Neue", sans-serif; }
     button, input { font: inherit; color: inherit; }
     a { color: inherit; }
     .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
 
     header { padding: 28px 20px 8px; max-width: 1280px; margin: 0 auto; display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     header h1 { margin: 0; font-size: clamp(40px, 7vw, 76px); line-height: .9; letter-spacing: -.02em; }
+    header h1 { color: var(--azure); }
     header h1 em { color: var(--accent); }
     header p { margin: 8px 0 0; color: var(--muted); max-width: 46ch; }
     .btn { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
     .btn:hover { border-color: var(--ink); }
-    .btn.dark { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .btn.dark { background: var(--green); color: var(--on-green); border-color: var(--green); }
+    .btn.dark:hover { border-color: var(--accent); }
     .btn:disabled { opacity: .45; cursor: default; }
 
     main { max-width: 1280px; margin: 0 auto; padding: 12px 20px 60px; display: grid; grid-template-columns: 320px 1fr; gap: 28px; align-items: start; }
@@ -42,21 +47,21 @@
     aside { position: sticky; top: 16px; display: grid; gap: 14px; }
     /* on phones: upload box, then results, then the side panels */
     @media (max-width: 860px) { main { gap: 14px; } aside { display: contents; } main > section { order: 1; } aside > .panel { order: 2; } .drop { width: 100%; aspect-ratio: auto; height: 300px; } }
-    .drop { position: relative; aspect-ratio: 1; border: 1.5px dashed var(--line); border-radius: 18px; background: var(--paper); display: grid; place-items: center; text-align: center; cursor: pointer; overflow: hidden; transition: border-color .15s; }
-    .drop.over, .drop:hover { border-color: var(--ink); }
+    .drop { position: relative; aspect-ratio: 1; border: 1.5px dashed var(--azure); border-radius: 18px; background: var(--paper); display: grid; place-items: center; text-align: center; cursor: pointer; overflow: hidden; transition: border-color .15s; }
+    .drop.over, .drop:hover { border-color: var(--accent); }
     .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--tile); }
     .drop .hint { padding: 24px; color: var(--muted); }
     .drop .hint b { display: block; color: var(--ink); font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 28px; margin-bottom: 6px; }
     .urlrow { display: flex; gap: 6px; }
     .urlrow input, .steer input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; }
     .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
-    .panel h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+    .panel h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--azure); font-weight: 600; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip { font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--bg); }
+    .chip { font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--green-soft); border-color: var(--green); }
     .steer { display: flex; gap: 6px; }
     .shop { display: flex; flex-wrap: wrap; gap: 6px; }
     .shop a { font-size: 13px; text-decoration: none; border-bottom: 1px solid var(--line); }
-    .shop a:hover { border-color: var(--ink); }
+    .shop a:hover { border-color: var(--accent); color: var(--accent); }
     .toggles { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
     .toggles label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
 
@@ -83,7 +88,7 @@
     .card .meta b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card .meta span { color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card .sim { height: 2px; background: var(--line); margin-top: 6px; }
-    .card .sim i { display: block; height: 100%; background: var(--accent); }
+    .card .sim i { display: block; height: 100%; background: var(--green); }
     .card .heart { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,.85); color: #17140f; cursor: pointer; font-size: 16px; line-height: 32px; padding: 0; }
     .card .heart.on { color: var(--accent); }
     .empty { color: var(--muted); padding: 40px 0; }

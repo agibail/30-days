@@ -3,6 +3,7 @@
 Every change to the 30 Days project, newest first. Entries are added by `./30 save`.
 
 <!-- new entries go below this line -->
+- 2026-11-05 16:16 · **Day 03** · New colours: Caribbean azure, hot pink and putting green
 - 2026-11-05 15:29 · **Day 06** · Nail Studio: upload a photo of your hands and your nails come back bare; grow, cut and shape them (7 shapes), then paint with polish, French tips, brush, dots, gems and 5 finishes
 - 2026-11-05 15:05 · Day pages take on that day's yellow; progress bar runs warm to neon
 - 2026-11-05 15:03 · **Day 07** · Swatch Card: turn colour photos into paint-chip cards with auto palettes, click-to-pick colours, paint-store names, three layouts, PNG download and a saved shelf
