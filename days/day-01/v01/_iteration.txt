@@ -1,0 +1,1 @@
+2026-11-05 13:12	Cigarette counter app: one-tap +1, daily limit, 14-day chart, private on-device storage
