@@ -1,8 +1,8 @@
 window.MANIFEST = {
-  "generated": "2026-11-05 13:39",
+  "generated": "2026-11-05 13:40",
   "start": "2026-10-30",
   "total": 30,
-  "repo": "https://github.com/agibail/30-days",
+  "repo": "https://github.com/agibail/30days",
   "branch": "main",
   "days": [
     {"day": 1, "slug": "day-01", "title": "Cigarette Counter", "date": "2026-10-30", "type": "website",
