@@ -16,6 +16,11 @@
   }
   function dateFor(n) { const d = noon(M.start); d.setDate(d.getDate() + n - 1); return d; }
   const fmtDate = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  // each day's own yellow: golden-ratio spread so neighbours never look alike
+  function shade(n) {
+    const f = (n * 0.618034) % 1, g = (n * 0.381966) % 1;
+    return `--h:${(36 + f * 26).toFixed(1)};--l:${(50 + g * 12).toFixed(1)}%`;
+  }
 
   // tiny markdown: headings, lists, links, bold/italic/code, paragraphs
   function md(text) {
@@ -78,7 +83,7 @@
       const cls = ["card", d ? "" : "empty", n === t ? "today" : ""].join(" ");
       const date = fmtDate(d && d.date ? noon(d.date) : dateFor(n));
       if (d) {
-        cards += `<a class="${cls}" href="#/day/${n}">
+        cards += `<a class="${cls}" style="${shade(n)}" href="#/day/${n}">
           <div class="thumb">${thumb(d)}</div>
           <div class="card-body">
             <div class="card-meta"><span>Day ${pad(n)}</span><span>${date}</span></div>
@@ -86,7 +91,7 @@
             <div class="badges">${badges(d)}</div>
           </div></a>`;
       } else {
-        cards += `<a class="${cls}" href="#/day/${n}">
+        cards += `<a class="${cls}" style="${shade(n)}" href="#/day/${n}">
           <div class="thumb"><div class="big">${pad(n)}</div></div>
           <div class="card-body">
             <div class="card-meta"><span>Day ${pad(n)}</span><span>${date}</span></div>
